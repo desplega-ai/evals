@@ -18,8 +18,8 @@ export default function CheckboxesPage() {
   };
 
   const handleMultipleOptionChange = (option: string) => {
-    setMultipleOptions(prev => 
-      prev.includes(option) 
+    setMultipleOptions(prev =>
+      prev.includes(option)
         ? prev.filter(item => item !== option)
         : [...prev, option]
     );
@@ -38,20 +38,23 @@ export default function CheckboxesPage() {
     <div className="font-sans min-h-screen p-8">
       <main className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Link 
+          <Link
             href="/"
             className="text-blue-600 hover:underline"
           >
             ← Back to Home
           </Link>
         </div>
-        
+
         <h1 className="text-3xl font-bold mb-8">Checkboxes Demo</h1>
-        
+
         <div className="space-y-12">
           <div>
             <h2 className="text-xl font-semibold mb-4">Switch Toggle</h2>
             <div className="flex items-center space-x-3">
+              {switchValue && (
+                <span className="text-green-600">Switch is ON</span>
+              )}
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -69,6 +72,16 @@ export default function CheckboxesPage() {
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Single Checkbox</h2>
+            {singleCheckbox && (
+              <div className="w-full p-3 bg-green-100 rounded mb-4">
+                <span className="text-green-600">
+                  Thanks for agreeing!
+                </span>
+                <a href="https://example.com/terms" className="text-blue-600 hover:underline ml-2">
+                  Terms and Conditions
+                </a>
+              </div>
+            )}
             <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
@@ -107,7 +120,7 @@ export default function CheckboxesPage() {
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Multiple Selection with Select All</h2>
-            
+
             <div className="mb-4">
               <div className="flex items-center space-x-3">
                 <input
