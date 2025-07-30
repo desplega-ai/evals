@@ -5,6 +5,7 @@ export default function Home() {
     { path: "/table", name: "Table Demo", description: "View dummy table data" },
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
+    { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
   ];
 
   return (
