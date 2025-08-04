@@ -6,15 +6,23 @@ export default function Home() {
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
     { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
+    { path: "/files", name: "Files Demo", description: "Upload and download files" },
   ];
 
   return (
     <div className="font-sans min-h-screen p-8">
       <main className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">AI QA Agent Frontend</h1>
+        <h1 className="text-3xl font-bold mb-8">
+          <a
+            href="https://desplega.ai?utm_source=evals"
+            target="_blank"
+            className="text-blue-600 hover:underline"
+          >
+            desplega.ai
+          </a> sample evals
+        </h1>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Available Routes</h2>
           <div className="grid gap-4">
             {routes.map((route) => (
               <Link
