@@ -37,7 +37,7 @@ export default function VisiblePage() {
           <h2 className="text-xl font-semibold mb-4">Test 1: Basic Overlapping</h2>
           {clickedItems.has('btn-behind') && (
             <p className="mb-4 p-3 bg-green-100 text-green-800 rounded">
-              ✓ You clicked the "Button Behind"! This button is partially hidden by the red overlapping div.
+              ✓ You clicked the utton Behind! This button is partially hidden by the red overlapping div.
             </p>
           )}
           <div className="relative h-64 bg-gray-200 rounded">
@@ -60,12 +60,12 @@ export default function VisiblePage() {
           <h2 className="text-xl font-semibold mb-4">Test 2: Partial Visibility</h2>
           {clickedItems.has('btn-partial-1') && (
             <p className="mb-4 p-3 bg-green-100 text-green-800 rounded">
-              ✓ You clicked the "Partially Hidden Right" button! Only a small part of this button is visible.
+              ✓ You clicked the Partially Hidden Right button! Only a small part of this button is visible.
             </p>
           )}
           {clickedItems.has('link-partial') && (
             <p className="mb-4 p-3 bg-blue-100 text-blue-800 rounded">
-              ✓ You clicked the "Partially Hidden Bottom Link"! This link is cut off at the bottom edge.
+              ✓ You clicked the Partially Hidden Bottom Link! This link is cut off at the bottom edge.
             </p>
           )}
           <div className="relative h-64 bg-gray-200 rounded overflow-hidden">
