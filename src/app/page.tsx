@@ -26,17 +26,45 @@ export default function Home() {
 
         <div className="mb-8">
           <div className="grid gap-4">
-            {routes.map((route) => (
-              <Link
-                key={route.path}
-                href={route.path}
-                className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-medium">{route.name}</h3>
-                <p className="text-gray-600">{route.description}</p>
-                <span className="text-sm text-blue-600">→ {route.path}</span>
-              </Link>
-            ))}
+            {routes.map((route) => {
+              if (route.path === "/graph") {
+                return (
+                  <div
+                    key={route.path}
+                    className="block p-4 border border-gray-300 rounded-lg"
+                  >
+                    <h3 className="text-lg font-medium mb-1">{route.name}</h3>
+                    <p className="text-gray-600 mb-3">{route.description}</p>
+                    <div className="flex gap-2">
+                      <Link
+                        href="/graph?empty"
+                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Empty Canvas
+                      </Link>
+                      <Link
+                        href="/graph?seed=default"
+                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      >
+                        With Seed
+                      </Link>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={route.path}
+                  href={route.path}
+                  className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="text-lg font-medium">{route.name}</h3>
+                  <p className="text-gray-600">{route.description}</p>
+                  <span className="text-sm text-blue-600">→ {route.path}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </main>
