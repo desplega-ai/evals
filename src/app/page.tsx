@@ -7,6 +7,7 @@ export default function Home() {
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
     { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
     { path: "/files", name: "Files Demo", description: "Upload and download files" },
+    { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
     { path: "/iframe", name: "Iframe Demo", description: "Embedded content in an iframe" },
     { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
   ];
