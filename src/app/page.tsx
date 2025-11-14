@@ -10,6 +10,7 @@ export default function Home() {
     { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
     { path: "/iframe", name: "Iframe Demo", description: "Embedded content in an iframe" },
     { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
+    { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
   ];
 
   return (
