@@ -140,23 +140,23 @@ export default function RestaurantsPage() {
   return (
     <div className="font-sans h-screen w-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="p-4 bg-white border-b border-gray-300 flex justify-between items-center">
+      <header className="p-4 bg-white border-b border-gray-300 flex justify-between items-center">
         <div>
-          <Link href="/" className="text-blue-600 hover:underline text-sm">
+          <Link href="/" className="text-blue-600 hover:underline text-sm" aria-label="Back to home page">
             ← Back to Home
           </Link>
           <h1 className="text-2xl font-bold mt-2">NYC Restaurants Map</h1>
         </div>
-        <div className="text-right">
-          {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-          {!mapLoaded && <p className="text-gray-500 text-sm">⏳ Loading map...</p>}
+        <div className="text-right" role="status" aria-live="polite">
+          {error && <p className="text-red-600 text-sm" aria-label={`Error: ${error}`}>❌ {error}</p>}
+          {!mapLoaded && <p className="text-gray-500 text-sm" aria-label="Map is loading">⏳ Loading map...</p>}
         </div>
-      </div>
+      </header>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Map */}
-        <div className="flex-1 relative bg-gray-100">
+        <div className="flex-1 relative bg-gray-100" role="region" aria-label="Interactive map showing NYC restaurants">
           <Map
             ref={mapRef}
             initialViewState={DEFAULT_VIEW}
@@ -189,7 +189,10 @@ export default function RestaurantsPage() {
                       ? "bg-green-600 border-2 border-white scale-125"
                       : "bg-red-600 border-2 border-white hover:bg-red-700"
                   }`}
-                  title={restaurant.name}
+                  aria-label={`Select ${restaurant.name} restaurant`}
+                  aria-pressed={selectedRestaurant === restaurant.id}
+                  data-testid={`restaurant-marker-${restaurant.id}`}
+                  data-restaurant-name={restaurant.name}
                 />
               </Marker>
             ))}
@@ -231,10 +234,12 @@ export default function RestaurantsPage() {
         </div>
 
         {/* Sidebar with restaurant list */}
-        <div
+        <aside
           className={`bg-white border-l border-gray-300 overflow-hidden transition-all duration-300 flex flex-col ${
             showList ? "w-80" : "w-0"
           }`}
+          aria-label="Restaurant list sidebar"
+          aria-hidden={!showList}
         >
           {/* Toggle button and header */}
           <div className="p-4 border-b border-gray-300 flex justify-between items-center">
@@ -242,14 +247,17 @@ export default function RestaurantsPage() {
             <button
               onClick={() => setShowList(!showList)}
               className="text-gray-600 hover:text-gray-900 transition-colors"
-              title="Toggle list"
+              aria-label={showList ? "Close restaurant list sidebar" : "Open restaurant list sidebar"}
+              aria-expanded={showList}
+              aria-controls="restaurant-list"
+              data-testid="sidebar-toggle-button"
             >
               {showList ? "✕" : "☰"}
             </button>
           </div>
 
           {/* Restaurant list */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" id="restaurant-list" role="region" aria-label="List of restaurants">
             <div className="p-4 space-y-2">
               {NYC_RESTAURANTS.map((restaurant) => (
                 <button
@@ -267,6 +275,11 @@ export default function RestaurantsPage() {
                       ? "border-green-600 bg-green-50 shadow-md"
                       : "border-gray-300 hover:bg-gray-50"
                   }`}
+                  aria-label={`${restaurant.name}, ${restaurant.cuisine}, located at ${restaurant.address}`}
+                  aria-pressed={selectedRestaurant === restaurant.id}
+                  data-testid={`restaurant-item-${restaurant.id}`}
+                  data-restaurant-id={restaurant.id}
+                  data-restaurant-name={restaurant.name}
                 >
                   <h3 className="font-medium text-sm">{restaurant.name}</h3>
                   <p className="text-xs text-gray-600">{restaurant.cuisine}</p>
@@ -277,14 +290,16 @@ export default function RestaurantsPage() {
               ))}
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Toggle button when list is hidden */}
         {!showList && (
           <button
             onClick={() => setShowList(true)}
             className="absolute right-0 top-20 bg-blue-600 text-white px-2 py-4 rounded-l-lg hover:bg-blue-700 transition-colors shadow-lg"
-            title="Show restaurant list"
+            aria-label="Open restaurant list sidebar"
+            aria-expanded={showList}
+            data-testid="sidebar-toggle-button-floating"
           >
             ☰
           </button>
