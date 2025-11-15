@@ -116,7 +116,7 @@ export default function DialogsPage() {
               </p>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {logs.map((log) => (
+                {[...logs].reverse().map((log) => (
                   <div
                     key={log.id}
                     className={`p-3 rounded border-l-4 ${

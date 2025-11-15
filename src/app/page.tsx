@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Home() {
+  const [viewMode, setViewMode] = useState<"list" | "table">("list");
+
   const routes = [
     { path: "/table", name: "Table Demo", description: "View dummy table data" },
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
@@ -8,66 +13,165 @@ export default function Home() {
     { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
     { path: "/files", name: "Files Demo", description: "Upload and download files" },
     { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
+    { path: "/tooltips", name: "Tooltips & Popovers Demo", description: "Tooltips and popovers with various positions and actions" },
     { path: "/iframe", name: "Iframe Demo", description: "Embedded content in an iframe" },
     { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
     { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
+    { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
   ];
 
   return (
     <div className="font-sans min-h-screen p-8">
-      <main className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">
-          <a
-            href="https://desplega.ai?utm_source=evals"
-            target="_blank"
-            className="text-blue-600 hover:underline"
-          >
-            desplega.ai
-          </a> sample evals
-        </h1>
+      <main className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">
+            <a
+              href="https://desplega.ai?utm_source=evals"
+              target="_blank"
+              className="text-blue-600 hover:underline"
+            >
+              desplega.ai
+            </a> evals
+          </h1>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600">View:</span>
+            <div className="flex gap-1 bg-gray-200 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-3 py-1 text-sm font-medium rounded transition-colors ${viewMode === "list"
+                    ? "bg-white text-gray-900 shadow"
+                    : "text-gray-700 hover:text-gray-900"
+                  }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-1 text-sm font-medium rounded transition-colors ${viewMode === "table"
+                    ? "bg-white text-gray-900 shadow"
+                    : "text-gray-700 hover:text-gray-900"
+                  }`}
+              >
+                Table
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="mb-8">
-          <div className="grid gap-4">
-            {routes.map((route) => {
-              if (route.path === "/graph") {
-                return (
-                  <div
-                    key={route.path}
-                    className="block p-4 border border-gray-300 rounded-lg"
-                  >
-                    <h3 className="text-lg font-medium mb-1">{route.name}</h3>
-                    <p className="text-gray-600 mb-3">{route.description}</p>
-                    <div className="flex gap-2">
-                      <Link
-                        href="/graph?empty"
-                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      >
-                        Empty Canvas
-                      </Link>
-                      <Link
-                        href="/graph?seed=default"
-                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                      >
-                        With Seed
-                      </Link>
+          {/* List View */}
+          {viewMode === "list" && (
+            <div className="grid gap-4">
+              {routes.map((route) => {
+                if (route.path === "/graph") {
+                  return (
+                    <div
+                      key={route.path}
+                      className="block p-4 border border-gray-300 rounded-lg"
+                    >
+                      <h3 className="text-lg font-medium mb-1">{route.name}</h3>
+                      <p className="text-gray-600 mb-3">{route.description}</p>
+                      <div className="flex gap-2">
+                        <Link
+                          href="/graph?empty"
+                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        >
+                          Empty Canvas
+                        </Link>
+                        <Link
+                          href="/graph?seed=default"
+                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        >
+                          With Seed
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                );
-              }
+                  );
+                }
 
-              return (
-                <Link
-                  key={route.path}
-                  href={route.path}
-                  className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <h3 className="text-lg font-medium">{route.name}</h3>
-                  <p className="text-gray-600">{route.description}</p>
-                  <span className="text-sm text-blue-600">→ {route.path}</span>
-                </Link>
-              );
-            })}
-          </div>
+                return (
+                  <Link
+                    key={route.path}
+                    href={route.path}
+                    className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <h3 className="text-lg font-medium">{route.name}</h3>
+                    <p className="text-gray-600">{route.description}</p>
+                    <span className="text-sm text-blue-600">→ {route.path}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Table View */}
+          {viewMode === "table" && (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-900">
+                      Name
+                    </th>
+                    <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-900">
+                      Description
+                    </th>
+                    <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-900">
+                      Path
+                    </th>
+                    <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {routes.map((route) => (
+                    <tr
+                      key={route.path}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="border border-gray-300 px-4 py-2 font-medium text-gray-900">
+                        {route.name}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-gray-600">
+                        {route.description}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-sm text-gray-700">
+                        {route.path}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">
+                        {route.path === "/graph" ? (
+                          <div className="flex gap-2 justify-center">
+                            <Link
+                              href="/graph?empty"
+                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Empty
+                            </Link>
+                            <Link
+                              href="/graph?seed=default"
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            >
+                              Seed
+                            </Link>
+                          </div>
+                        ) : (
+                          <Link
+                            href={route.path}
+                            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors inline-block"
+                          >
+                            Visit
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </main>
     </div>
