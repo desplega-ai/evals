@@ -7,6 +7,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
 
   const routes = [
+    { path: "/speedrun", name: "Speedrun Challenge", description: "Complete all challenges as fast as you can", isFeatured: true },
     { path: "/table", name: "Table Demo", description: "View dummy table data" },
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
@@ -69,7 +70,11 @@ export default function Home() {
                   return (
                     <div
                       key={route.path}
-                      className="block p-4 border border-gray-300 rounded-lg"
+                      className={`block p-4 border rounded-lg ${
+                        route.isFeatured
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-300"
+                      }`}
                     >
                       <h3 className="text-lg font-medium mb-1">{route.name}</h3>
                       <p className="text-gray-600 mb-3">{route.description}</p>
@@ -96,8 +101,17 @@ export default function Home() {
                   <Link
                     key={route.path}
                     href={href}
-                    className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className={`block p-4 border rounded-lg transition-colors ${
+                      route.isFeatured
+                        ? "border-blue-500 bg-blue-50 hover:bg-blue-100 shadow-md"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
                   >
+                    {route.isFeatured && (
+                      <span className="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded mb-2">
+                        Featured
+                      </span>
+                    )}
                     <h3 className="text-lg font-medium">{route.name}</h3>
                     <p className="text-gray-600">{route.description}</p>
                     <span className="text-sm text-blue-600">→ {href}</span>
@@ -131,9 +145,18 @@ export default function Home() {
                   {routes.map((route) => (
                     <tr
                       key={route.path}
-                      className="hover:bg-gray-50 transition-colors"
+                      className={`transition-colors ${
+                        route.isFeatured
+                          ? "bg-blue-50 hover:bg-blue-100"
+                          : "hover:bg-gray-50"
+                      }`}
                     >
                       <td className="border border-gray-300 px-4 py-2 font-medium text-gray-900">
+                        {route.isFeatured && (
+                          <span className="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded mr-2">
+                            Featured
+                          </span>
+                        )}
                         {route.name}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-gray-600">
