@@ -91,15 +91,16 @@ export default function Home() {
                   );
                 }
 
+                const href = route.path === "/otp" ? "/otp?seed=1337" : route.path;
                 return (
                   <Link
                     key={route.path}
-                    href={route.path}
+                    href={href}
                     className="block p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <h3 className="text-lg font-medium">{route.name}</h3>
                     <p className="text-gray-600">{route.description}</p>
-                    <span className="text-sm text-blue-600">→ {route.path}</span>
+                    <span className="text-sm text-blue-600">→ {href}</span>
                   </Link>
                 );
               })}
@@ -159,7 +160,7 @@ export default function Home() {
                           </div>
                         ) : (
                           <Link
-                            href={route.path}
+                            href={route.path === "/otp" ? "/otp?seed=1337" : route.path}
                             className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors inline-block"
                           >
                             Visit

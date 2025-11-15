@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { authenticator } from "otplib";
 import qrcode from "qrcode";
 
@@ -10,7 +11,34 @@ interface OTPState {
   qrCode: string;
 }
 
-export default function OTPPage() {
+// Generate deterministic base32 secret from a seed string
+function generateDeterministicSecret(seed: string): string {
+  // Create a simple hash-based deterministic secret
+  // This converts the seed into a valid base32 string
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  // Convert hash to base32
+  const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let secret = "";
+  let num = Math.abs(hash);
+
+  // Generate a 32-character base32 string (256 bits, which is a valid TOTP secret)
+  for (let i = 0; i < 32; i++) {
+    secret += base32Chars[num % 32];
+    num = Math.floor(num / 32);
+  }
+
+  return secret;
+}
+
+function OTPPageContent() {
+  const searchParams = useSearchParams();
+  const seedParam = searchParams?.get("seed");
   const [otpState, setOtpState] = useState<OTPState>({ secret: "", qrCode: "" });
   const [otpInput, setOtpInput] = useState("");
   const [otpInputFields, setOtpInputFields] = useState<string[]>(["", "", "", "", "", ""]);
@@ -27,7 +55,10 @@ export default function OTPPage() {
   useEffect(() => {
     const generateSecret = async () => {
       try {
-        const secret = authenticator.generateSecret();
+        // Use seeded secret if provided, otherwise generate random
+        const secret = seedParam
+          ? generateDeterministicSecret(seedParam)
+          : authenticator.generateSecret();
 
         const otpauthUrl = authenticator.keyuri(
           "test@example.com",
@@ -54,7 +85,7 @@ export default function OTPPage() {
     };
 
     generateSecret();
-  }, []);
+  }, [seedParam]);
 
   // Update code every second and calculate time remaining
   useEffect(() => {
@@ -182,7 +213,13 @@ export default function OTPPage() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold mb-8">OTP Testing Demo</h1>
+        <h1 className="text-3xl font-bold mb-4">OTP Testing Demo</h1>
+
+        {seedParam && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900">
+            <span className="font-medium">Seed:</span> <code className="bg-blue-100 px-2 py-1 rounded">{seedParam}</code> - Change it with <code className="bg-blue-100 px-2 py-1 rounded">?seed=your-seed</code>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="text-center py-8">
@@ -351,8 +388,38 @@ export default function OTPPage() {
 
             {/* Current Code Section (Hidden by default) */}
             <details className="border border-gray-300 rounded-lg p-6 bg-gray-50 md:col-span-2">
-              <summary className="text-sm font-medium text-gray-700 cursor-pointer hover:text-gray-900">
-                Show current valid code (for testing)
+              <summary className="text-sm font-medium text-gray-700 cursor-pointer hover:text-gray-900 flex items-center justify-between">
+                <span>Show current valid code (for testing)</span>
+                {/* Liveness Circle Indicator */}
+                <div className="relative w-8 h-8 flex-shrink-0 ml-4">
+                  <svg className="w-full h-full" viewBox="0 0 32 32">
+                    {/* Background circle */}
+                    <circle cx="16" cy="16" r="14" fill="none" stroke="#e5e7eb" strokeWidth="2" />
+                    {/* Progress circle */}
+                    <circle
+                      cx="16"
+                      cy="16"
+                      r="14"
+                      fill="none"
+                      strokeWidth="2"
+                      strokeDasharray={`${(timeRemaining / 30) * 88} 88`}
+                      className={`transition-all duration-1000 -rotate-90 origin-center ${
+                        timeRemaining > 10
+                          ? "stroke-green-500"
+                          : timeRemaining > 5
+                          ? "stroke-yellow-500"
+                          : "stroke-red-500"
+                      }`}
+                      style={{
+                        transform: "rotate(-90deg)",
+                        transformOrigin: "50% 50%",
+                      }}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
+                    {timeRemaining}
+                  </span>
+                </div>
               </summary>
               <div className="mt-4 p-4 bg-white border border-gray-300 rounded">
                 <p className="text-sm text-gray-600 mb-2">Current valid code:</p>
@@ -393,5 +460,13 @@ export default function OTPPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function OTPPage() {
+  return (
+    <Suspense fallback={<div className="font-sans min-h-screen p-8"><main className="max-w-2xl mx-auto"><p className="text-gray-600">Loading...</p></main></div>}>
+      <OTPPageContent />
+    </Suspense>
   );
 }
