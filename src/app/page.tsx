@@ -12,6 +12,7 @@ export default function Home() {
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
     { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
+    { path: "/sliders", name: "Sliders Demo", description: "Range sliders with different types and variants" },
     { path: "/files", name: "Files Demo", description: "Upload and download files" },
     { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
     { path: "/tooltips", name: "Tooltips & Popovers Demo", description: "Tooltips and popovers with various positions and actions" },
