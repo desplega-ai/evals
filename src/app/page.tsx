@@ -22,6 +22,8 @@ export default function Home() {
     { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
   ];
 
+  console.log(`Hi there! 👋 If you're exploring the code, feel free to reach out at t@desplega.ai!`)
+
   return (
     <div className="font-sans min-h-screen p-8">
       <main className="max-w-6xl mx-auto">
@@ -43,8 +45,8 @@ export default function Home() {
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-3 py-1 text-sm font-medium rounded transition-colors ${viewMode === "list"
-                    ? "bg-white text-gray-900 shadow"
-                    : "text-gray-700 hover:text-gray-900"
+                  ? "bg-white text-gray-900 shadow"
+                  : "text-gray-700 hover:text-gray-900"
                   }`}
               >
                 List
@@ -52,8 +54,8 @@ export default function Home() {
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-1 text-sm font-medium rounded transition-colors ${viewMode === "table"
-                    ? "bg-white text-gray-900 shadow"
-                    : "text-gray-700 hover:text-gray-900"
+                  ? "bg-white text-gray-900 shadow"
+                  : "text-gray-700 hover:text-gray-900"
                   }`}
               >
                 Table
@@ -71,11 +73,10 @@ export default function Home() {
                   return (
                     <div
                       key={route.path}
-                      className={`block p-4 border rounded-lg ${
-                        route.isFeatured
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300"
-                      }`}
+                      className={`block p-4 border rounded-lg ${route.isFeatured
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300"
+                        }`}
                     >
                       <h3 className="text-lg font-medium mb-1">{route.name}</h3>
                       <p className="text-gray-600 mb-3">{route.description}</p>
@@ -102,11 +103,10 @@ export default function Home() {
                   <Link
                     key={route.path}
                     href={href}
-                    className={`block p-4 border rounded-lg transition-colors ${
-                      route.isFeatured
-                        ? "border-blue-500 bg-blue-50 hover:bg-blue-100 shadow-md"
-                        : "border-gray-300 hover:bg-gray-50"
-                    }`}
+                    className={`block p-4 border rounded-lg transition-colors ${route.isFeatured
+                      ? "border-blue-500 bg-blue-50 hover:bg-blue-100 shadow-md"
+                      : "border-gray-300 hover:bg-gray-50"
+                      }`}
                   >
                     {route.isFeatured && (
                       <span className="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded mb-2">
@@ -146,11 +146,10 @@ export default function Home() {
                   {routes.map((route) => (
                     <tr
                       key={route.path}
-                      className={`transition-colors ${
-                        route.isFeatured
-                          ? "bg-blue-50 hover:bg-blue-100"
-                          : "hover:bg-gray-50"
-                      }`}
+                      className={`transition-colors ${route.isFeatured
+                        ? "bg-blue-50 hover:bg-blue-100"
+                        : "hover:bg-gray-50"
+                        }`}
                     >
                       <td className="border border-gray-300 px-4 py-2 font-medium text-gray-900">
                         {route.isFeatured && (
