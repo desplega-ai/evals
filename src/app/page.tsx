@@ -1,9 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function Home() {
+const routes = [
+    { path: "/speedrun", name: "Speedrun Challenge", description: "Complete all challenges as fast as you can", isFeatured: true },
+    { path: "/table", name: "Table Demo", description: "View dummy table data" },
+    { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
+    { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
+    { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
+    { path: "/sliders", name: "Sliders Demo", description: "Range sliders with different types and variants" },
+    { path: "/files", name: "Files Demo", description: "Upload and download files" },
+    { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
+    { path: "/tooltips", name: "Tooltips & Popovers Demo", description: "Tooltips and popovers with various positions and actions" },
+    { path: "/iframe", name: "Iframe Demo", description: "Embedded content in an iframe" },
+    { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
+    { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
+    { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
+  { path: "/loading-demo", name: "Loading Demo", description: "Loading states, skeletons, and spinners" },
+];
+
+function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -21,28 +39,10 @@ export default function Home() {
     router.push(query ? `?${query}` : "/", { scroll: false });
   };
 
-  const routes = [
-    { path: "/speedrun", name: "Speedrun Challenge", description: "Complete all challenges as fast as you can", isFeatured: true },
-    { path: "/table", name: "Table Demo", description: "View dummy table data" },
-    { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
-    { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
-    { path: "/buttons", name: "Buttons Demo", description: "Interaction with different types of buttons" },
-    { path: "/sliders", name: "Sliders Demo", description: "Range sliders with different types and variants" },
-    { path: "/files", name: "Files Demo", description: "Upload and download files" },
-    { path: "/dialogs", name: "Dialogs Demo", description: "Browser native dialogs (alert, confirm, prompt)" },
-    { path: "/tooltips", name: "Tooltips & Popovers Demo", description: "Tooltips and popovers with various positions and actions" },
-    { path: "/iframe", name: "Iframe Demo", description: "Embedded content in an iframe" },
-    { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
-    { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
-    { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
-    { path: "/loading-demo", name: "Loading Demo", description: "Loading states, skeletons, and spinners" },
-  ];
-
-  console.log(`Hi there! 👋 If you're exploring the code, feel free to reach out at t@desplega.ai!`)
+  console.log(`Hi there! 👋 If you're exploring the code, feel free to reach out at t@desplega.ai!`);
 
   return (
-    <div className="font-sans min-h-screen p-8">
-      <main className="max-w-6xl mx-auto">
+    <>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">
             <a
@@ -254,6 +254,17 @@ export default function Home() {
             </div>
           )}
         </div>
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="font-sans min-h-screen p-8">
+      <main className="max-w-6xl mx-auto">
+        <Suspense fallback={<div>Loading...</div>}>
+          <HomeContent />
+        </Suspense>
       </main>
     </div>
   );
