@@ -1,10 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Home() {
-  const [viewMode, setViewMode] = useState<"list" | "table">("list");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const viewParam = searchParams.get("view");
+  const viewMode: "list" | "table" = viewParam === "table" ? "table" : "list";
+
+  const setViewMode = (mode: "list" | "table") => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (mode === "list") {
+      params.delete("view");
+    } else {
+      params.set("view", mode);
+    }
+    const query = params.toString();
+    router.push(query ? `?${query}` : "/", { scroll: false });
+  };
 
   const routes = [
     { path: "/speedrun", name: "Speedrun Challenge", description: "Complete all challenges as fast as you can", isFeatured: true },
@@ -20,6 +35,7 @@ export default function Home() {
     { path: "/graph", name: "Graph Demo", description: "Drag and drop nodes to build graphs" },
     { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
     { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
+    { path: "/loading-demo", name: "Loading Demo", description: "Loading states, skeletons, and spinners" },
   ];
 
   console.log(`Hi there! 👋 If you're exploring the code, feel free to reach out at t@desplega.ai!`)
@@ -92,6 +108,32 @@ export default function Home() {
                           className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                         >
                           With Seed
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (route.path === "/loading-demo") {
+                  return (
+                    <div
+                      key={route.path}
+                      className="block p-4 border rounded-lg border-gray-300"
+                    >
+                      <h3 className="text-lg font-medium mb-1">{route.name}</h3>
+                      <p className="text-gray-600 mb-3">{route.description}</p>
+                      <div className="flex gap-2">
+                        <Link
+                          href="/loading-demo"
+                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        >
+                          Normal
+                        </Link>
+                        <Link
+                          href="/loading-demo?fullpage"
+                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                        >
+                          Full Page Spinner (5s)
                         </Link>
                       </div>
                     </div>
@@ -179,6 +221,21 @@ export default function Home() {
                               className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                             >
                               Seed
+                            </Link>
+                          </div>
+                        ) : route.path === "/loading-demo" ? (
+                          <div className="flex gap-2 justify-center">
+                            <Link
+                              href="/loading-demo"
+                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Normal
+                            </Link>
+                            <Link
+                              href="/loading-demo?fullpage"
+                              className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                            >
+                              Full Page
                             </Link>
                           </div>
                         ) : (
