@@ -19,6 +19,7 @@ const routes = [
     { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
     { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
   { path: "/loading-demo", name: "Loading Demo", description: "Loading states, skeletons, and spinners" },
+  { path: "/dates", name: "Dates Demo", description: "Date pickers with various libraries and 22 variants" },
 ];
 
 function HomeContent() {

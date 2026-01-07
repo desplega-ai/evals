@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "mapbox-gl/dist/mapbox-gl.css";
+@import "react-day-picker/style.css";
+@import "react-datepicker/dist/react-datepicker.css";
 
 :root {
   --background: #ffffff;
