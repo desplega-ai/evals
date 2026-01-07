@@ -4,32 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js 15.4 application with TypeScript that serves as an AI QA Agent Frontend for testing and evaluation purposes. The application provides different UI components and interactions to test AI agents' ability to interact with web elements.
+This is a Next.js 16.1 application with TypeScript that serves as an AI QA Agent Frontend for testing and evaluation purposes. The application provides different UI components and interactions to test AI agents' ability to interact with web elements.
 
 ## Development Commands
 
 ```bash
-# Development server with Turbopack
-npm run dev
+# Development server (Turbopack is default in Next.js 16)
+pnpm dev
 
 # Build production bundle
-npm run build
+pnpm build
 
 # Start production server
-npm start
+pnpm start
 
 # Run linting
-npm run lint
+pnpm lint
 ```
 
 ## Architecture
 
 ### Tech Stack
-- Next.js 15.4.1 with App Router
-- React 19.1.0
+- Next.js 16.1.1 with App Router (Turbopack default)
+- React 19.2.3
 - TypeScript with strict mode enabled
 - Tailwind CSS v4 for styling
 - ESLint for code quality
+- pnpm for package management
 
 ### Project Structure
 - `/src/app/` - Next.js app directory containing all pages and components
