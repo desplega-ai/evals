@@ -5,14 +5,20 @@ on:
     branches:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to verify'
+        required: true
+        type: number
 
 concurrency:
-  group: pr-verify-${{ github.event.pull_request.number }}
+  group: pr-verify-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
   verify-pr:
-    if: github.event.pull_request.draft == false
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,7 +37,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          REVIEW_DECISION=$(gh pr view ${{ github.event.pull_request.number }} --json reviewDecision -q '.reviewDecision')
+          REVIEW_DECISION=$(gh pr view ${{ github.event.pull_request.number || inputs.pr_number }} --json reviewDecision -q '.reviewDecision')
           echo "Review decision: $REVIEW_DECISION"
           if [ "$REVIEW_DECISION" != "APPROVED" ]; then
             echo "PR is not approved yet. Skipping verification."
@@ -81,23 +87,23 @@ jobs:
           CI: true
         run: |
           # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model haiku "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
+          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model haiku "/qa-use:verify-pr #${{ github.event.pull_request.number || inputs.pr_number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
 
       - name: Post Report to PR
         if: always() && steps.approval.outputs.approved == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f /tmp/pr-verify-report-${{ github.event.pull_request.number }}.md ]; then
-            gh pr comment ${{ github.event.pull_request.number }} \
-              --body-file /tmp/pr-verify-report-${{ github.event.pull_request.number }}.md
+          if [ -f /tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md ]; then
+            gh pr comment ${{ github.event.pull_request.number || inputs.pr_number }} \
+              --body-file /tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md
           fi
 
       - name: Upload Verification Artifacts
         if: always() && steps.approval.outputs.approved == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: pr-verification-${{ github.event.pull_request.number }}
+          name: pr-verification-${{ github.event.pull_request.number || inputs.pr_number }}
           path: |
             /tmp/pr-verify-*.png
             /tmp/pr-verify-*.json
