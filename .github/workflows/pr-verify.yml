@@ -9,6 +9,11 @@ on:
 jobs:
   verify-pr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: write
+      statuses: read
 
     steps:
       - name: Checkout repository
