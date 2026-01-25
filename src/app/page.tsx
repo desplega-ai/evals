@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 const routes = [
     { path: "/speedrun", name: "Speedrun Challenge", description: "Complete all challenges as fast as you can", isFeatured: true },
+    { path: "/autocomplete", name: "Autocomplete Demo", description: "Typeahead search with debounced API calls" },
     { path: "/table", name: "Table Demo", description: "View dummy table data" },
     { path: "/checkboxes", name: "Checkboxes Demo", description: "Different checkbox types" },
     { path: "/visible", name: "Visibility Demo", description: "Interaction with visible and not visible elements" },
