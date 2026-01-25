@@ -56,7 +56,7 @@ jobs:
           CI: true
         run: |
           # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model haiku "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }} Perform quick check of the changes in this PR, use a single session" | jq 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
+          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model sonnet "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }} Perform quick checks of the changes in this PR, max 2/3 sessions" 2>&1 | tee /tmp/pr-verify-raw-${{ github.event.pull_request.number }}.log | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")' | tee /tmp/pr-verify-filtered-${{ github.event.pull_request.number }}.jsonl
 
       - name: Post Report to PR
         if: always() # Post even if verification had warnings
@@ -76,4 +76,6 @@ jobs:
           path: |
             /tmp/pr-verify-*.png
             /tmp/pr-verify-*.json
+            /tmp/pr-verify-*.jsonl
+            /tmp/pr-verify-*.log
             /tmp/pr-verify-report-*.md
