@@ -1,0 +1,74 @@
+name: PR Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verify-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify Claude CLI Installation
+        run: |
+          claude --version || (echo "Claude CLI installation failed" && exit 1)
+
+      - name: Install qa-use plugin and CLI
+        run: |
+          claude plugin marketplace add desplega-ai/qa-use
+          claude plugin install qa-use@desplega.ai
+          npm install -g @desplega.ai/qa-use
+
+      - name: Wait for Vercel Preview
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
+        id: vercel
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 300
+
+      - name: Run PR Verification
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          QA_USE_API_KEY: ${{ secrets.QA_USE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
+        run: |
+          # Run Claude Code with the verify-pr command using Vercel preview URL
+          claude --print "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}"
+
+      - name: Post Report to PR
+        if: always()  # Post even if verification had warnings
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f /tmp/pr-verify-report-${{ github.event.pull_request.number }}.md ]; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body-file /tmp/pr-verify-report-${{ github.event.pull_request.number }}.md
+          fi
+
+      - name: Upload Verification Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-verification-${{ github.event.pull_request.number }}
+          path: |
+            /tmp/pr-verify-*.png
+            /tmp/pr-verify-*.json
+            /tmp/pr-verify-report-*.md
