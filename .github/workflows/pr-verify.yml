@@ -56,7 +56,7 @@ jobs:
           CI: true
         run: |
           # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}"
+          claude --print --dangerously-skip-permissions "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}"
 
       - name: Post Report to PR
         if: always()  # Post even if verification had warnings
