@@ -4,10 +4,15 @@ on:
   pull_request:
     branches:
       - main
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   verify-pr:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,27 +26,46 @@ jobs:
         with:
           fetch-depth: 0 # Full history for diff analysis
 
+      - name: Check PR approval status
+        id: approval
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVIEW_DECISION=$(gh pr view ${{ github.event.pull_request.number }} --json reviewDecision -q '.reviewDecision')
+          echo "Review decision: $REVIEW_DECISION"
+          if [ "$REVIEW_DECISION" != "APPROVED" ]; then
+            echo "PR is not approved yet. Skipping verification."
+            echo "approved=false" >> $GITHUB_OUTPUT
+          else
+            echo "approved=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node.js
+        if: steps.approval.outputs.approved == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install Claude Code CLI
+        if: steps.approval.outputs.approved == 'true'
         run: |
           curl -fsSL https://claude.ai/install.sh | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Verify Claude CLI Installation
+        if: steps.approval.outputs.approved == 'true'
         run: |
           claude --version || (echo "Claude CLI installation failed" && exit 1)
 
       - name: Install qa-use plugin and CLI
+        if: steps.approval.outputs.approved == 'true'
         run: |
           claude plugin marketplace add desplega-ai/qa-use
           claude plugin install qa-use@desplega.ai
           npm install -g @desplega.ai/qa-use
 
       - name: Wait for Vercel Preview
+        if: steps.approval.outputs.approved == 'true'
         uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
         id: vercel
         with:
@@ -49,6 +73,7 @@ jobs:
           max_timeout: 300
 
       - name: Run PR Verification
+        if: steps.approval.outputs.approved == 'true'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           QA_USE_API_KEY: ${{ secrets.QA_USE_API_KEY }}
@@ -56,10 +81,10 @@ jobs:
           CI: true
         run: |
           # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model sonnet "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
+          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model haiku "/qa-use:verify-pr #${{ github.event.pull_request.number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
 
       - name: Post Report to PR
-        if: always() # Post even if verification had warnings
+        if: always() && steps.approval.outputs.approved == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -69,8 +94,8 @@ jobs:
           fi
 
       - name: Upload Verification Artifacts
+        if: always() && steps.approval.outputs.approved == 'true'
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: pr-verification-${{ github.event.pull_request.number }}
           path: |
