@@ -61,7 +61,7 @@ Tests the agent's ability to:
 
 **Why it's challenging:** Requires maintaining context across multiple "pages" and understanding flow control.
 
-### 4. Tabs and Accordions
+### 4. Tabs and Accordions ✅ (Implemented)
 Tests the agent's ability to:
 - Click tabs to reveal hidden content
 - Find content that's behind inactive tabs
