@@ -1207,6 +1207,11 @@ function OTPChallengeWrapper({
 
   // Validate OTP input
   useEffect(() => {
+    // Don't re-validate if challenge is already completed
+    if (challenge.completed) {
+      return;
+    }
+
     if (otpInput.length === 6 && secret) {
       try {
         const isValidCode = authenticator.check(otpInput, secret);
@@ -1218,7 +1223,7 @@ function OTPChallengeWrapper({
     } else {
       setIsValid(false);
     }
-  }, [otpInput, secret, currentCode]);
+  }, [otpInput, secret]);
 
   useEffect(() => {
     if (!challenge.completed && isValid) {
@@ -1262,12 +1267,6 @@ function OTPChallengeWrapper({
             readOnly
             className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-700"
           />
-        </div>
-
-        <div className="p-3 bg-yellow-50 border border-yellow-300 rounded">
-          <p className="text-xs text-yellow-900">
-            Code expires in: <strong>{timeRemaining}s</strong> (changes every 30 seconds)
-          </p>
         </div>
 
         <div>
