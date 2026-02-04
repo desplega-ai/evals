@@ -1269,6 +1269,29 @@ function OTPChallengeWrapper({
           />
         </div>
 
+        {/* Token validity - only hide when completed, not while in progress */}
+        {!challenge.completed && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-2">Token Validity</label>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ${
+                    timeRemaining <= 5 ? "bg-red-500" : timeRemaining <= 10 ? "bg-yellow-500" : "bg-green-500"
+                  }`}
+                  style={{ width: `${(timeRemaining / 30) * 100}%` }}
+                />
+              </div>
+              <span className={`text-sm font-mono font-bold min-w-[2rem] ${
+                timeRemaining <= 5 ? "text-red-600" : timeRemaining <= 10 ? "text-yellow-600" : "text-green-600"
+              }`}>
+                {timeRemaining}s
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Code refreshes every 30 seconds</p>
+          </div>
+        )}
+
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-2">Enter 6-digit OTP code</label>
           <input
