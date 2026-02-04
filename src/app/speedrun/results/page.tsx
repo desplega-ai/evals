@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { CHALLENGES_LIST } from "../challenges";
 
 interface ResultsData {
   name: string;
@@ -12,6 +13,7 @@ interface ResultsData {
   endTime: string;
   completedChallenges: number;
   totalChallenges: number;
+  completedIds?: string[];
   userAgent: string;
   platform: string;
 }
@@ -121,6 +123,37 @@ function ResultsPageContent() {
               </p>
             </div>
           </div>
+
+          {/* Challenges Breakdown */}
+          {results.completedIds && (
+            <div className="p-6 bg-gray-50 rounded-lg border border-gray-300 mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Challenges Breakdown</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {CHALLENGES_LIST.map((challenge) => {
+                  const completed = results.completedIds!.includes(challenge.id);
+                  return (
+                    <div
+                      key={challenge.id}
+                      className={`flex items-center p-3 rounded ${
+                        completed
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full mr-3 text-sm font-bold ${
+                        completed
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-400 text-white"
+                      }`}>
+                        {completed ? "✓" : "✗"}
+                      </span>
+                      <span className="text-sm font-medium">{challenge.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* System Info */}
           <div className="p-6 bg-gray-50 rounded-lg border border-gray-300 mb-8">

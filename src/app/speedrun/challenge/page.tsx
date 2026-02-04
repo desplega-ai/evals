@@ -13,6 +13,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { authenticator } from "otplib";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { CHALLENGES_LIST } from "../challenges";
 
 interface Challenge {
   id: string;
@@ -49,6 +52,9 @@ function FinalResultsPage({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
   };
 
+  const allComplete = completedCount === challenges.length;
+  const stoppedEarly = !timeLimitExceeded && !allComplete;
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-12">
       {timeLimitExceeded ? (
@@ -64,6 +70,22 @@ function FinalResultsPage({
             <p className="text-gray-700 mb-2">Challenges Completed: {completedCount}/{challenges.length}</p>
             <p className="text-sm text-gray-600">
               Better luck next time! Try a different difficulty mode.
+            </p>
+          </div>
+        </>
+      ) : stoppedEarly ? (
+        <>
+          <div className="text-center mb-8">
+            <h2 className="text-4xl font-bold text-orange-600 mb-2">⏹️ Speedrun Stopped</h2>
+            <p className="text-gray-600 text-lg">You stopped the speedrun before completing all challenges.</p>
+          </div>
+
+          <div className="mb-8 p-8 bg-orange-50 rounded-lg border-2 border-orange-300">
+            <p className="text-gray-700 mb-4">Elapsed Time:</p>
+            <p className="text-6xl font-mono font-bold text-orange-600 mb-4">{formatTime(elapsedTime)}</p>
+            <p className="text-gray-700 mb-2">Challenges Completed: {completedCount}/{challenges.length}</p>
+            <p className="text-sm text-gray-600">
+              Try again to complete all challenges!
             </p>
           </div>
         </>
@@ -167,6 +189,7 @@ function ResultsSharePage({
     endTime: new Date().toISOString(),
     completedChallenges: challenges.filter((c) => c.completed).length,
     totalChallenges: challenges.length,
+    completedIds: challenges.filter((c) => c.completed).map((c) => c.id),
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Unknown",
     platform: typeof navigator !== "undefined" ? navigator.platform : "Unknown",
   };
@@ -296,19 +319,9 @@ function SpeedrunPageContent() {
   const [timeLimitExceeded, setTimeLimitExceeded] = useState(false);
   const [resultName, setResultName] = useState("");
   const [showShareCode, setShowShareCode] = useState(false);
-  const [challenges, setChallenges] = useState<Challenge[]>([
-    { id: "checkbox", name: "Checkbox Challenge", description: "Toggle a switch and check a checkbox", completed: false },
-    { id: "buttons", name: "Buttons Challenge", description: "Click 3 different button types", completed: false },
-    { id: "table", name: "Table Challenge", description: "Filter, select a row, and add a new row", completed: false },
-    { id: "visible", name: "Visibility Challenge", description: "Click the hidden and partially hidden buttons", completed: false },
-    { id: "graph", name: "Graph Challenge", description: "Add a node and connect it to an existing one", completed: false },
-    { id: "dialogs", name: "Dialogs Challenge", description: "Trigger all three dialog types", completed: false },
-    { id: "popovers", name: "Popovers Challenge", description: "Open a popover and click an action button inside", completed: false },
-    { id: "iframe", name: "IFrame Challenge", description: "Interact with an embedded iframe content", completed: false },
-    { id: "math", name: "Math Challenge", description: "Solve a random math operation", completed: false },
-    { id: "memory", name: "Memory Challenge", description: "Remember a hidden string and type it back", completed: false },
-    { id: "otp", name: "OTP Challenge", description: "Enter the correct 6-digit OTP code", completed: false },
-  ]);
+  const [challenges, setChallenges] = useState<Challenge[]>(
+    CHALLENGES_LIST.map((c) => ({ ...c, completed: false }))
+  );
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -384,6 +397,8 @@ function SpeedrunPageContent() {
     window.location.href = `/speedrun/challenge?mode=${selectedDifficulty}`;
   };
 
+  const [showChallengesList, setShowChallengesList] = useState(false);
+
   // Only show difficulty selection if no mode is provided
   if (!validDifficulty) {
     return (
@@ -394,20 +409,6 @@ function SpeedrunPageContent() {
             <p className="text-gray-600 mb-8 text-lg">
               Complete all challenges as fast as you can to test your AI agent&apos;s performance, accuracy, speed, and reliability.
             </p>
-
-            <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-              <h2 className="text-xl font-semibold mb-4 text-blue-900">Challenges Include:</h2>
-              <ul className="text-left space-y-2 text-blue-900">
-                {challenges.map((ch) => (
-                  <li key={ch.id} className="flex items-start">
-                    <span className="mr-3">•</span>
-                    <div>
-                      <span className="font-medium">{ch.name}:</span> {ch.description}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
 
             <div className="mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">Select Difficulty</h2>
@@ -434,6 +435,40 @@ function SpeedrunPageContent() {
                   <p className="text-sm text-red-600">1 minute time limit - insane difficulty! 💀</p>
                 </button>
               </div>
+            </div>
+
+            {/* Challenges Accordion */}
+            <div className="mb-8 rounded-lg border border-blue-200 overflow-hidden">
+              <button
+                onClick={() => setShowChallengesList(!showChallengesList)}
+                className="w-full p-4 bg-blue-50 flex items-center justify-between text-left hover:bg-blue-100 transition-colors"
+              >
+                <span className="text-lg font-semibold text-blue-900">
+                  Challenges Include ({challenges.length} total)
+                </span>
+                <svg
+                  className={`w-5 h-5 text-blue-700 transition-transform ${showChallengesList ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showChallengesList && (
+                <div className="p-4 bg-blue-50/50">
+                  <ul className="text-left space-y-2 text-blue-900">
+                    {challenges.map((ch) => (
+                      <li key={ch.id} className="flex items-start">
+                        <span className="mr-3">•</span>
+                        <div>
+                          <span className="font-medium">{ch.name}:</span> {ch.description}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <Link
@@ -497,12 +532,14 @@ function SpeedrunPageContent() {
                 </div>
               )}
 
-              <button
-                onClick={handleStop}
-                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold text-sm"
-              >
-                Stop
-              </button>
+              {!finished && (
+                <button
+                  onClick={handleStop}
+                  className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold text-sm"
+                >
+                  Stop
+                </button>
+              )}
             </div>
           </div>
 
@@ -595,6 +632,24 @@ function SpeedrunPageContent() {
             <OTPChallengeWrapper
               challenge={challenges[10]}
               onComplete={() => markChallengeComplete("otp")}
+            />
+
+            {/* Autocomplete Challenge */}
+            <AutocompleteChallengeWrapper
+              challenge={challenges[11]}
+              onComplete={() => markChallengeComplete("autocomplete")}
+            />
+
+            {/* Dates Challenge */}
+            <DatesChallengeWrapper
+              challenge={challenges[12]}
+              onComplete={() => markChallengeComplete("dates")}
+            />
+
+            {/* Tabs Challenge */}
+            <TabsChallengeWrapper
+              challenge={challenges[13]}
+              onComplete={() => markChallengeComplete("tabs")}
             />
           </div>
         ) : !showShareCode ? (
@@ -1242,7 +1297,6 @@ function OTPChallengeWrapper({
       <ChallengeCard
         title={challenge.name}
         completed={challenge.completed}
-        className="md:col-span-2"
       >
         <p className="text-gray-600">Generating OTP secret...</p>
       </ChallengeCard>
@@ -1256,7 +1310,6 @@ function OTPChallengeWrapper({
       checklist={[
         { text: "Enter the correct 6-digit OTP code", completed: isValid },
       ]}
-      className="md:col-span-2"
     >
       <div className="space-y-4">
         <div>
@@ -1793,6 +1846,613 @@ function PopoversChallengeWrapper({
             </div>
           </>
         )}
+      </div>
+    </ChallengeCard>
+  );
+}
+
+/* ================ AUTOCOMPLETE CHALLENGE ================ */
+
+// Embedded small dataset for autocomplete challenge
+const SPEEDRUN_USERS = [
+  { id: 1, name: "Alice Anderson", email: "alice@example.com" },
+  { id: 2, name: "Bob Baker", email: "bob@example.com" },
+  { id: 3, name: "Charlie Chen", email: "charlie@example.com" },
+  { id: 4, name: "Diana Davis", email: "diana@example.com" },
+  { id: 5, name: "Edward Evans", email: "edward@example.com" },
+  { id: 6, name: "Fiona Foster", email: "fiona@example.com" },
+  { id: 7, name: "George Garcia", email: "george@example.com" },
+  { id: 8, name: "Hannah Hill", email: "hannah@example.com" },
+  { id: 9, name: "Ivan Ivanov", email: "ivan@example.com" },
+  { id: 10, name: "Julia Johnson", email: "julia@example.com" },
+  { id: 11, name: "Kevin Kim", email: "kevin@example.com" },
+  { id: 12, name: "Laura Lee", email: "laura@example.com" },
+  { id: 13, name: "Michael Martinez", email: "michael@example.com" },
+  { id: 14, name: "Nancy Nguyen", email: "nancy@example.com" },
+  { id: 15, name: "Oscar O'Brien", email: "oscar@example.com" },
+];
+
+const SPEEDRUN_CITIES = [
+  { id: 1, name: "New York", country: "USA" },
+  { id: 2, name: "Los Angeles", country: "USA" },
+  { id: 3, name: "London", country: "UK" },
+  { id: 4, name: "Paris", country: "France" },
+  { id: 5, name: "Tokyo", country: "Japan" },
+  { id: 6, name: "Berlin", country: "Germany" },
+  { id: 7, name: "Sydney", country: "Australia" },
+  { id: 8, name: "Toronto", country: "Canada" },
+  { id: 9, name: "Dubai", country: "UAE" },
+  { id: 10, name: "Singapore", country: "Singapore" },
+  { id: 11, name: "Mumbai", country: "India" },
+  { id: 12, name: "São Paulo", country: "Brazil" },
+  { id: 13, name: "Mexico City", country: "Mexico" },
+  { id: 14, name: "Seoul", country: "South Korea" },
+  { id: 15, name: "Amsterdam", country: "Netherlands" },
+  { id: 16, name: "Barcelona", country: "Spain" },
+  { id: 17, name: "Rome", country: "Italy" },
+  { id: 18, name: "Bangkok", country: "Thailand" },
+  { id: 19, name: "Hong Kong", country: "China" },
+  { id: 20, name: "Vienna", country: "Austria" },
+  { id: 21, name: "Stockholm", country: "Sweden" },
+  { id: 22, name: "Dublin", country: "Ireland" },
+  { id: 23, name: "Lisbon", country: "Portugal" },
+  { id: 24, name: "Prague", country: "Czechia" },
+  { id: 25, name: "Copenhagen", country: "Denmark" },
+];
+
+type SpeedrunUser = (typeof SPEEDRUN_USERS)[0];
+type SpeedrunCity = (typeof SPEEDRUN_CITIES)[0];
+
+function AutocompleteChallengeWrapper({
+  challenge,
+  onComplete,
+}: {
+  challenge: Challenge;
+  onComplete: () => void;
+}) {
+  const [selectedUsers, setSelectedUsers] = useState<SpeedrunUser[]>([]);
+  const [selectedCity, setSelectedCity] = useState<SpeedrunCity | null>(null);
+  const [userQuery, setUserQuery] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
+  const [userResults, setUserResults] = useState<SpeedrunUser[]>([]);
+  const [cityResults, setCityResults] = useState<SpeedrunCity[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [userHighlight, setUserHighlight] = useState(-1);
+  const [cityHighlight, setCityHighlight] = useState(-1);
+
+  const userInputRef = useRef<HTMLInputElement>(null);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const userDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const cityDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const hasEnoughUsers = selectedUsers.length >= 2;
+  const hasCity = selectedCity !== null;
+
+  useEffect(() => {
+    if (!challenge.completed && hasEnoughUsers && hasCity) {
+      onComplete();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasEnoughUsers, hasCity, onComplete]);
+
+  // Debounced user search
+  const searchUsers = useCallback((query: string) => {
+    if (userDebounceRef.current) clearTimeout(userDebounceRef.current);
+    userDebounceRef.current = setTimeout(() => {
+      if (!query.trim()) {
+        setUserResults([]);
+        return;
+      }
+      const lower = query.toLowerCase();
+      const filtered = SPEEDRUN_USERS.filter(
+        (u) =>
+          !selectedUsers.find((s) => s.id === u.id) &&
+          (u.name.toLowerCase().includes(lower) || u.email.toLowerCase().includes(lower))
+      );
+      setUserResults(filtered.slice(0, 5));
+      setUserHighlight(-1);
+    }, 300);
+  }, [selectedUsers]);
+
+  // Debounced city search
+  const searchCities = useCallback((query: string) => {
+    if (cityDebounceRef.current) clearTimeout(cityDebounceRef.current);
+    cityDebounceRef.current = setTimeout(() => {
+      if (!query.trim()) {
+        setCityResults([]);
+        return;
+      }
+      const lower = query.toLowerCase();
+      const filtered = SPEEDRUN_CITIES.filter(
+        (c) =>
+          c.name.toLowerCase().includes(lower) || c.country.toLowerCase().includes(lower)
+      );
+      setCityResults(filtered.slice(0, 5));
+      setCityHighlight(-1);
+    }, 300);
+  }, []);
+
+  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserQuery(e.target.value);
+    setShowUserDropdown(true);
+    searchUsers(e.target.value);
+  };
+
+  const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCityQuery(e.target.value);
+    setShowCityDropdown(true);
+    searchCities(e.target.value);
+  };
+
+  const selectUser = (user: SpeedrunUser) => {
+    setSelectedUsers((prev) => [...prev, user]);
+    setUserQuery("");
+    setUserResults([]);
+    setShowUserDropdown(false);
+    userInputRef.current?.focus();
+  };
+
+  const removeUser = (user: SpeedrunUser) => {
+    setSelectedUsers((prev) => prev.filter((u) => u.id !== user.id));
+  };
+
+  const selectCity = (city: SpeedrunCity) => {
+    setSelectedCity(city);
+    setCityQuery("");
+    setCityResults([]);
+    setShowCityDropdown(false);
+  };
+
+  const handleUserKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && userQuery === "" && selectedUsers.length > 0) {
+      setSelectedUsers((prev) => prev.slice(0, -1));
+      return;
+    }
+    if (!showUserDropdown || userResults.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setUserHighlight((prev) => (prev < userResults.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setUserHighlight((prev) => (prev > 0 ? prev - 1 : userResults.length - 1));
+    } else if (e.key === "Enter" && userHighlight >= 0) {
+      e.preventDefault();
+      selectUser(userResults[userHighlight]);
+    } else if (e.key === "Escape") {
+      setShowUserDropdown(false);
+    }
+  };
+
+  const handleCityKeyDown = (e: React.KeyboardEvent) => {
+    if (!showCityDropdown || cityResults.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setCityHighlight((prev) => (prev < cityResults.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setCityHighlight((prev) => (prev > 0 ? prev - 1 : cityResults.length - 1));
+    } else if (e.key === "Enter" && cityHighlight >= 0) {
+      e.preventDefault();
+      selectCity(cityResults[cityHighlight]);
+    } else if (e.key === "Escape") {
+      setShowCityDropdown(false);
+    }
+  };
+
+  return (
+    <ChallengeCard
+      title={challenge.name}
+      completed={challenge.completed}
+      checklist={[
+        { text: "Select first user", completed: selectedUsers.length >= 1 },
+        { text: "Select second user", completed: selectedUsers.length >= 2 },
+        { text: "Select a city", completed: hasCity },
+      ]}
+    >
+      <div className="space-y-4">
+        {/* User Autocomplete */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Search Users (select 2)
+          </label>
+          <p className="text-xs text-gray-500 mb-1">
+            Try: Alice, Bob, Charlie, Diana, Edward...
+          </p>
+          <div
+            className={`flex flex-wrap gap-1 p-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white ${
+              selectedUsers.length > 0 ? "border-blue-300" : "border-gray-300"
+            }`}
+            onClick={() => userInputRef.current?.focus()}
+          >
+            {selectedUsers.map((user) => (
+              <span
+                key={user.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
+              >
+                {user.name}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeUser(user);
+                  }}
+                  className="hover:bg-blue-200 rounded-full p-0.5"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </span>
+            ))}
+            <input
+              ref={userInputRef}
+              type="text"
+              value={userQuery}
+              onChange={handleUserInputChange}
+              onFocus={() => userQuery && setShowUserDropdown(true)}
+              onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
+              onKeyDown={handleUserKeyDown}
+              placeholder={selectedUsers.length === 0 ? "Type a name..." : "Add more..."}
+              className="flex-1 min-w-[80px] outline-none bg-transparent text-sm"
+            />
+          </div>
+          {showUserDropdown && userResults.length > 0 && (
+            <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-auto">
+              {userResults.map((user, idx) => (
+                <li
+                  key={user.id}
+                  onMouseDown={() => selectUser(user)}
+                  onMouseEnter={() => setUserHighlight(idx)}
+                  className={`px-3 py-2 cursor-pointer text-sm ${
+                    idx === userHighlight ? "bg-blue-100" : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="font-medium">{user.name}</div>
+                  <div className="text-xs text-gray-500">{user.email}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* City Autocomplete */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Search Cities
+          </label>
+          {selectedCity ? (
+            <div className="flex items-center justify-between p-2 bg-green-50 border border-green-300 rounded-lg">
+              <span className="text-sm font-medium text-green-700">
+                {selectedCity.name}, {selectedCity.country}
+              </span>
+              <button
+                onClick={() => setSelectedCity(null)}
+                className="text-green-600 hover:text-green-800"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                ref={cityInputRef}
+                type="text"
+                value={cityQuery}
+                onChange={handleCityInputChange}
+                onFocus={() => cityQuery && setShowCityDropdown(true)}
+                onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                onKeyDown={handleCityKeyDown}
+                placeholder="Type a city or country..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              {showCityDropdown && cityResults.length > 0 && (
+                <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-auto">
+                  {cityResults.map((city, idx) => (
+                    <li
+                      key={city.id}
+                      onMouseDown={() => selectCity(city)}
+                      onMouseEnter={() => setCityHighlight(idx)}
+                      className={`px-3 py-2 cursor-pointer text-sm ${
+                        idx === cityHighlight ? "bg-blue-100" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="font-medium">{city.name}</span>
+                      <span className="text-gray-500">, {city.country}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </ChallengeCard>
+  );
+}
+
+/* ================ DATES CHALLENGE ================ */
+
+function DatesChallengeWrapper({
+  challenge,
+  onComplete,
+}: {
+  challenge: Challenge;
+  onComplete: () => void;
+}) {
+  const [nativeDate, setNativeDate] = useState<string>("");
+  const [pickerDate, setPickerDate] = useState<Date | null>(null);
+
+  const hasNativeDate = nativeDate !== "";
+  const hasPickerDate = pickerDate !== null;
+
+  useEffect(() => {
+    if (!challenge.completed && hasNativeDate && hasPickerDate) {
+      onComplete();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasNativeDate, hasPickerDate, onComplete]);
+
+  return (
+    <ChallengeCard
+      title={challenge.name}
+      completed={challenge.completed}
+      checklist={[
+        { text: "Select date from native HTML picker", completed: hasNativeDate },
+        { text: "Select date from react-datepicker", completed: hasPickerDate },
+      ]}
+    >
+      <div className="space-y-4">
+        {/* Native HTML Date Picker */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Native HTML Date Picker
+          </label>
+          <input
+            type="date"
+            value={nativeDate}
+            onChange={(e) => setNativeDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {nativeDate && (
+            <p className="mt-1 text-xs text-green-600">Selected: {nativeDate}</p>
+          )}
+        </div>
+
+        {/* React DatePicker */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            React DatePicker
+          </label>
+          <DatePicker
+            selected={pickerDate}
+            onChange={(date: Date | null) => setPickerDate(date)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholderText="Select a date"
+            dateFormat="yyyy-MM-dd"
+          />
+          {pickerDate && (
+            <p className="mt-1 text-xs text-green-600">
+              Selected: {pickerDate.toISOString().split("T")[0]}
+            </p>
+          )}
+        </div>
+      </div>
+    </ChallengeCard>
+  );
+}
+
+/* ================ TABS CHALLENGE ================ */
+
+const TAB_CONTENT = [
+  { id: "profile", label: "Profile", content: "User profile information and settings.", code: null },
+  { id: "security", label: "Security", content: "Password and authentication settings. Secret: SPEED-TAB", code: "SPEED-TAB" },
+  { id: "billing", label: "Billing", content: "Payment methods and invoices.", code: null },
+];
+
+interface NestedItem {
+  id: string;
+  title: string;
+  content?: string;
+  code?: string;
+  children?: NestedItem[];
+}
+
+const NESTED_ACCORDION: NestedItem[] = [
+  {
+    id: "getting-started",
+    title: "Getting Started",
+    children: [
+      { id: "install", title: "Installation", content: "Download and run the installer." },
+      {
+        id: "config",
+        title: "Configuration",
+        children: [
+          { id: "basic", title: "Basic Setup", content: "Configure your API keys." },
+          { id: "advanced", title: "Advanced Options", content: "Hidden code: SPEED-NEST", code: "SPEED-NEST" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "features",
+    title: "Features",
+    content: "Explore our product features and capabilities.",
+  },
+];
+
+function TabsChallengeWrapper({
+  challenge,
+  onComplete,
+}: {
+  challenge: Challenge;
+  onComplete: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState("profile");
+  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set());
+  const [tabCodeInput, setTabCodeInput] = useState("");
+  const [nestCodeInput, setNestCodeInput] = useState("");
+  const [tabCodeValid, setTabCodeValid] = useState(false);
+  const [nestCodeValid, setNestCodeValid] = useState(false);
+
+  useEffect(() => {
+    if (!challenge.completed && tabCodeValid && nestCodeValid) {
+      onComplete();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabCodeValid, nestCodeValid, onComplete]);
+
+  const togglePanel = (id: string) => {
+    setOpenPanels((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const validateTabCode = (value: string) => {
+    setTabCodeInput(value);
+    setTabCodeValid(value.trim().toUpperCase() === "SPEED-TAB");
+  };
+
+  const validateNestCode = (value: string) => {
+    setNestCodeInput(value);
+    setNestCodeValid(value.trim().toUpperCase() === "SPEED-NEST");
+  };
+
+  const renderNestedAccordion = (items: NestedItem[], depth = 0) => {
+    return (
+      <div className={`space-y-1 ${depth > 0 ? "ml-3 mt-1" : ""}`}>
+        {items.map((item) => (
+          <div key={item.id} className="border border-gray-200 rounded overflow-hidden">
+            <button
+              onClick={() => togglePanel(item.id)}
+              className={`w-full flex items-center justify-between p-2 text-left text-sm transition-colors ${
+                openPanels.has(item.id)
+                  ? "bg-purple-50 text-purple-700"
+                  : "bg-gray-50 hover:bg-gray-100"
+              }`}
+            >
+              <span className={depth > 0 ? "text-xs" : "text-sm"}>{item.title}</span>
+              <svg
+                className={`w-4 h-4 transition-transform ${openPanels.has(item.id) ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {openPanels.has(item.id) && (
+              <div className="p-2 bg-white border-t border-gray-200">
+                {item.content && (
+                  <p className={`text-gray-600 ${item.code ? "text-yellow-700 font-medium bg-yellow-50 p-1 rounded" : ""} ${depth > 0 ? "text-xs" : "text-sm"}`}>
+                    {item.content}
+                  </p>
+                )}
+                {item.children && renderNestedAccordion(item.children, depth + 1)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <ChallengeCard
+      title={challenge.name}
+      completed={challenge.completed}
+      checklist={[
+        { text: "Find secret code from a tab", completed: tabCodeValid },
+        { text: "Find secret code from nested accordion", completed: nestCodeValid },
+      ]}
+      className="md:col-span-2"
+    >
+      <div className="space-y-4">
+        {/* Tabs */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="flex border-b border-gray-200">
+            {TAB_CONTENT.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "border-b-2 border-blue-600 text-blue-600 bg-blue-50"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="p-3">
+            {TAB_CONTENT.map((tab) => (
+              <div key={tab.id} className={activeTab === tab.id ? "block" : "hidden"}>
+                <p className={`text-sm ${tab.code ? "text-yellow-700 font-medium bg-yellow-50 p-2 rounded" : "text-gray-600"}`}>
+                  {tab.content}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Nested Accordion */}
+        <div>
+          <p className="text-xs text-gray-600 mb-2">Navigate nested accordions to find the second code:</p>
+          {renderNestedAccordion(NESTED_ACCORDION)}
+        </div>
+
+        {/* Code Inputs */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Tab Code</label>
+            <input
+              type="text"
+              value={tabCodeInput}
+              onChange={(e) => validateTabCode(e.target.value)}
+              placeholder="Enter tab code"
+              className={`w-full px-2 py-1 border rounded text-sm ${
+                tabCodeValid
+                  ? "border-green-500 bg-green-50"
+                  : tabCodeInput
+                  ? "border-red-300"
+                  : "border-gray-300"
+              }`}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Nested Code</label>
+            <input
+              type="text"
+              value={nestCodeInput}
+              onChange={(e) => validateNestCode(e.target.value)}
+              placeholder="Enter nested code"
+              className={`w-full px-2 py-1 border rounded text-sm ${
+                nestCodeValid
+                  ? "border-green-500 bg-green-50"
+                  : nestCodeInput
+                  ? "border-red-300"
+                  : "border-gray-300"
+              }`}
+            />
+          </div>
+        </div>
       </div>
     </ChallengeCard>
   );
