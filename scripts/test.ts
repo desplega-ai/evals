@@ -1,13 +1,13 @@
 import { execSync } from "child_process";
 
 try {
-  const output = execSync("npx @desplega.ai/qa-use", {
+  const output = execSync("npx --yes @desplega.ai/qa-use 2>&1", {
     encoding: "utf-8",
     stdio: "pipe",
-    timeout: 60000,
+    timeout: 120000,
   });
   console.log(output);
-} catch (error: any) {
+} catch (error) {
   console.log("=== STDOUT ===");
   console.log(error.stdout || "(empty)");
   console.log("=== STDERR ===");
