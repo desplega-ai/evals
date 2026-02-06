@@ -23,6 +23,10 @@ const routes = [
   { path: "/dates", name: "Dates Demo", description: "Date pickers with various libraries and 22 variants" },
   { path: "/storage", name: "Storage Demo", description: "Browser storage APIs: localStorage, sessionStorage, cookies, IndexedDB" },
   { path: "/tabs", name: "Tabs & Accordions Demo", description: "Tabs, accordions, nested panels, hidden content discovery" },
+  { path: "/drag-reorder", name: "Drag-to-Reorder Demo", description: "Drag-and-drop list reordering, kanban board, button-based reordering" },
+  { path: "/wizard", name: "Multi-Step Wizard", description: "Multi-page form with conditional steps, validation, and review" },
+  { path: "/keyboard", name: "Keyboard Navigation Demo", description: "Keyboard-only interactions: focus traps, arrow keys, shortcuts, skip links" },
+  { path: "/pagination", name: "Pagination & Infinite Scroll", description: "Classic pagination, infinite scroll, load more, cursor-based navigation" },
 ];
 
 function HomeContent() {
