@@ -1,18 +1,17 @@
 import { execSync } from "child_process";
 
-// Print the PATH
-console.log("=== PATH ===");
-console.log(process.env.PATH);
-console.log("");
-
-// List executables in each PATH directory
-const pathDirs = (process.env.PATH || "").split(":");
-for (const dir of pathDirs) {
-  try {
-    const files = execSync(`ls "${dir}"`, { encoding: "utf-8" });
-    console.log(`\n=== ${dir} ===`);
-    console.log(files);
-  } catch {
-    console.log(`\n=== ${dir} === (not found or empty)`);
-  }
+try {
+  const output = execSync("npx @desplega.ai/qa-use", {
+    encoding: "utf-8",
+    stdio: "pipe",
+    timeout: 60000,
+  });
+  console.log(output);
+} catch (error: any) {
+  console.log("=== STDOUT ===");
+  console.log(error.stdout || "(empty)");
+  console.log("=== STDERR ===");
+  console.log(error.stderr || "(empty)");
+  console.log("=== EXIT CODE ===");
+  console.log(error.status);
 }
