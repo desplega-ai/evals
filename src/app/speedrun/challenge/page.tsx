@@ -1121,6 +1121,12 @@ function MemoryChallengeWrapper({
     setIsCorrect(null);
   };
 
+  const handleShowText = () => {
+    setIsHidden(false);
+    setUserInput("");
+    setIsCorrect(null);
+  };
+
   return (
     <ChallengeCard
       title={challenge.name}
@@ -1180,6 +1186,13 @@ function MemoryChallengeWrapper({
                 {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
               </div>
             )}
+
+            <button
+              onClick={handleShowText}
+              className="w-full px-4 py-3 bg-purple-500 text-white font-bold rounded hover:bg-purple-600 transition-all"
+            >
+              Show Text Again
+            </button>
           </>
         )}
       </div>
