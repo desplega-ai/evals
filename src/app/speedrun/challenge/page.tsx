@@ -10,6 +10,8 @@ import {
   useEdgesState,
   type OnConnect,
   Position,
+  Background,
+  Controls,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { authenticator } from "otplib";
@@ -61,7 +63,7 @@ function FinalResultsPage({
         <>
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-red-600 mb-2">⏰ Time&apos;s Up!</h2>
-            <p className="text-gray-600 text-lg">You ran out of time in {difficulty === "normal" ? "Normal Mode (5 min)" : "Dark Souls Mode (1 min)"}!</p>
+            <p className="text-gray-600 text-lg">You ran out of time in {difficulty === "normal" ? "Normal Mode (5 min)" : difficulty === "hard" ? "Hard Mode (2m30s)" : "Dark Souls Mode (1 min)"}!</p>
           </div>
 
           <div className="mb-8 p-8 bg-red-50 rounded-lg border-2 border-red-300">
@@ -93,7 +95,7 @@ function FinalResultsPage({
         <>
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-green-600 mb-2">🎉 All Challenges Complete!</h2>
-            <p className="text-gray-600 text-lg">You&apos;ve successfully completed the speedrun in {difficulty === "easy" ? "Easy Mode" : difficulty === "normal" ? "Normal Mode (5 min)" : "Dark Souls Mode (1 min)"}!</p>
+            <p className="text-gray-600 text-lg">You&apos;ve successfully completed the speedrun in {difficulty === "easy" ? "Easy Mode" : difficulty === "normal" ? "Normal Mode (5 min)" : difficulty === "hard" ? "Hard Mode (2m30s)" : "Dark Souls Mode (1 min)"}!</p>
           </div>
 
           <div className="mb-8 p-8 bg-green-50 rounded-lg border-2 border-green-300">
@@ -295,11 +297,12 @@ function ResultsSharePage({
   );
 }
 
-type Difficulty = "easy" | "normal" | "darksoul" | null;
+type Difficulty = "easy" | "normal" | "hard" | "darksoul" | null;
 
 const DIFFICULTY_LIMITS: Record<Exclude<Difficulty, null>, number> = {
   easy: Infinity, // No limit
   normal: 5 * 60 * 1000, // 5 minutes
+  hard: 2.5 * 60 * 1000, // 2 minutes 30 seconds
   darksoul: 1 * 60 * 1000, // 1 minute
 };
 
@@ -308,7 +311,7 @@ function SpeedrunPageContent() {
   const modeParam = searchParams?.get("mode");
 
   // Check if mode is valid and set it from query params
-  const validDifficulty = modeParam && ["easy", "normal", "darksoul"].includes(modeParam)
+  const validDifficulty = modeParam && ["easy", "normal", "hard", "darksoul"].includes(modeParam)
     ? (modeParam as Difficulty)
     : null;
 
@@ -428,6 +431,13 @@ function SpeedrunPageContent() {
                   <p className="text-sm text-blue-600">5 minute time limit - balanced challenge</p>
                 </button>
                 <button
+                  onClick={() => handleStartDifficulty("hard")}
+                  className="p-4 bg-orange-50 border-2 border-orange-400 rounded-lg hover:bg-orange-100 transition-colors text-left"
+                >
+                  <p className="text-lg font-bold text-orange-700">Hard Mode</p>
+                  <p className="text-sm text-orange-600">2 minute 30 second time limit - serious pressure</p>
+                </button>
+                <button
                   onClick={() => handleStartDifficulty("darksoul")}
                   className="p-4 bg-red-50 border-2 border-red-400 rounded-lg hover:bg-red-100 transition-colors text-left"
                 >
@@ -489,10 +499,10 @@ function SpeedrunPageContent() {
       <div className={`sticky top-0 z-50 bg-gradient-to-b from-white via-white to-gray-50 shadow-sm border-b-2 transition-colors ${
         isTimeCritical ? "border-red-500" : isTimeWarning ? "border-yellow-500" : "border-gray-200"
       }`}>
-        <div className="max-w-6xl mx-auto px-8 py-4">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
           <div className="flex justify-between items-center gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold whitespace-nowrap">Speedrun - {difficulty === "easy" ? "Easy" : difficulty === "normal" ? "Normal (5m)" : "Dark Souls (1m)"}</h1>
+              <h1 className="text-xl font-bold whitespace-nowrap">Speedrun - {difficulty === "easy" ? "Easy" : difficulty === "normal" ? "Normal (5m)" : difficulty === "hard" ? "Hard (2m30s)" : "Dark Souls (1m)"}</h1>
               <Link
                 href="/"
                 className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium whitespace-nowrap"
@@ -564,7 +574,7 @@ function SpeedrunPageContent() {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto p-8">
+      <main className="max-w-[1800px] mx-auto p-8">
 
         {!finished ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -598,57 +608,63 @@ function SpeedrunPageContent() {
               onComplete={() => markChallengeComplete("graph")}
             />
 
+            {/* Reorder & Slider Challenge */}
+            <ReorderSliderChallengeWrapper
+              challenge={challenges[5]}
+              onComplete={() => markChallengeComplete("reorder-slider")}
+            />
+
             {/* Dialogs Challenge */}
             <DialogsChallengeWrapper
-              challenge={challenges[5]}
+              challenge={challenges[6]}
               onComplete={() => markChallengeComplete("dialogs")}
             />
 
             {/* Popovers Challenge */}
             <PopoversChallengeWrapper
-              challenge={challenges[6]}
+              challenge={challenges[7]}
               onComplete={() => markChallengeComplete("popovers")}
             />
 
             {/* IFrame Challenge */}
             <IFrameChallengeWrapper
-              challenge={challenges[7]}
+              challenge={challenges[8]}
               onComplete={() => markChallengeComplete("iframe")}
             />
 
             {/* Math Challenge */}
             <MathChallengeWrapper
-              challenge={challenges[8]}
+              challenge={challenges[9]}
               onComplete={() => markChallengeComplete("math")}
             />
 
             {/* Memory Challenge */}
             <MemoryChallengeWrapper
-              challenge={challenges[9]}
+              challenge={challenges[10]}
               onComplete={() => markChallengeComplete("memory")}
             />
 
             {/* OTP Challenge */}
             <OTPChallengeWrapper
-              challenge={challenges[10]}
+              challenge={challenges[11]}
               onComplete={() => markChallengeComplete("otp")}
             />
 
             {/* Autocomplete Challenge */}
             <AutocompleteChallengeWrapper
-              challenge={challenges[11]}
+              challenge={challenges[12]}
               onComplete={() => markChallengeComplete("autocomplete")}
             />
 
             {/* Dates Challenge */}
             <DatesChallengeWrapper
-              challenge={challenges[12]}
+              challenge={challenges[13]}
               onComplete={() => markChallengeComplete("dates")}
             />
 
             {/* Tabs Challenge */}
             <TabsChallengeWrapper
-              challenge={challenges[13]}
+              challenge={challenges[14]}
               onComplete={() => markChallengeComplete("tabs")}
             />
           </div>
@@ -809,7 +825,7 @@ function ButtonsChallengeWrapper({
   const [clicked, setClicked] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!challenge.completed && clicked.size >= 3) {
+    if (!challenge.completed && clicked.size >= 4) {
       onComplete();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -828,42 +844,87 @@ function ButtonsChallengeWrapper({
       title={challenge.name}
       completed={challenge.completed}
       checklist={[
-        { text: "Click Button 1", completed: clicked.has("btn-1") },
-        { text: "Click Button 2", completed: clicked.has("btn-2") },
-        { text: "Click Button 3", completed: clicked.has("btn-3") },
+        { text: "Click the price selection button", completed: clicked.has("btn-price") },
+        { text: "Click the icon button", completed: clicked.has("btn-icon") },
+        { text: "Click the pill button", completed: clicked.has("btn-pill") },
+        { text: "Click the ghost button", completed: clicked.has("btn-ghost") },
       ]}
     >
       <div className="space-y-3">
+        {/* Price selection button — complex nested content */}
         <button
-          onClick={() => handleClick("btn-1")}
-          className={`w-full px-4 py-2 rounded transition-all ${
-            clicked.has("btn-1")
+          type="button"
+          onClick={() => handleClick("btn-price")}
+          className={`w-full rounded transition-all duration-200 ${
+            clicked.has("btn-price")
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-blue-500 hover:bg-blue-600 text-white"
+          }`}
+          data-cy="selectYourchoiceButton-0"
+        >
+          <div className="p-2">
+            <div className="flex items-center justify-center gap-2">
+              <span className="font-semibold text-lg">11.74&thinsp;€<span className="text-sm">/kg</span></span>
+              <span className={clicked.has("btn-price") ? "text-green-200" : "text-blue-200"}>/</span>
+              <span className="font-semibold text-lg">140.84&thinsp;€</span>
+            </div>
+            <span className="block text-center text-sm mt-1">
+              {clicked.has("btn-price") ? "✓ Selected" : "Select"}
+            </span>
+          </div>
+        </button>
+
+        {/* Icon button — SVG icon with label */}
+        <button
+          onClick={() => handleClick("btn-icon")}
+          className={`w-full p-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
+            clicked.has("btn-icon")
+              ? "bg-green-100 text-green-700 hover:bg-green-200"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-sm font-medium">
+            {clicked.has("btn-icon") ? "✓ Settings" : "Settings"}
+          </span>
+        </button>
+
+        {/* Pill button — rounded-full shape */}
+        <button
+          onClick={() => handleClick("btn-pill")}
+          className={`w-full px-6 py-3 rounded-full font-medium transition-all duration-200 ${
+            clicked.has("btn-pill")
               ? "bg-green-600 text-white hover:bg-green-700"
-              : "bg-blue-500 text-white hover:bg-blue-600"
+              : "bg-purple-600 text-white hover:bg-purple-700"
           }`}
         >
-          Button 1 {clicked.has("btn-1") ? "✓" : ""}
+          {clicked.has("btn-pill") ? "✓ Pill Selected" : "Pill Button"}
         </button>
-        <button
-          onClick={() => handleClick("btn-2")}
-          className={`w-full px-4 py-2 rounded border-2 transition-all ${
-            clicked.has("btn-2")
-              ? "border-green-600 text-green-600 bg-green-50"
-              : "border-blue-600 text-blue-600 hover:bg-blue-50"
-          }`}
-        >
-          Button 2 {clicked.has("btn-2") ? "✓" : ""}
-        </button>
-        <button
-          onClick={() => handleClick("btn-3")}
-          className={`w-full px-4 py-2 rounded transition-all font-medium ${
-            clicked.has("btn-3")
-              ? "text-green-600 hover:bg-green-50"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          Button 3 {clicked.has("btn-3") ? "✓" : ""}
-        </button>
+
+        <div className="flex gap-3">
+          {/* Ghost button — minimal styling, no background */}
+          <button
+            onClick={() => handleClick("btn-ghost")}
+            className={`flex-1 px-6 py-3 rounded font-medium transition-all duration-200 ${
+              clicked.has("btn-ghost")
+                ? "text-green-600 hover:bg-green-50"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {clicked.has("btn-ghost") ? "✓ Ghost" : "Ghost Button"}
+          </button>
+
+          {/* Disabled button — distractor, should NOT be clicked */}
+          <button
+            disabled
+            className="flex-1 px-6 py-3 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+          >
+            Disabled
+          </button>
+        </div>
       </div>
     </ChallengeCard>
   );
@@ -878,15 +939,14 @@ function IFrameChallengeWrapper({
   onComplete: () => void;
 }) {
   const [iframeClicked, setIframeClicked] = useState(false);
-  const [outsideClicked, setOutsideClicked] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    if (!challenge.completed && iframeClicked && outsideClicked) {
+    if (!challenge.completed && iframeClicked) {
       onComplete();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iframeClicked, outsideClicked, onComplete]);
+  }, [iframeClicked, onComplete]);
 
   // Listen for messages from iframe
   useEffect(() => {
@@ -908,16 +968,38 @@ function IFrameChallengeWrapper({
         body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; margin: 0; }
         .content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         h2 { margin-top: 0; color: #333; }
-        p { color: #666; }
+        h3 { color: #444; margin-top: 24px; }
+        p { color: #666; line-height: 1.6; }
+        .section { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
         button { padding: 8px 16px; margin: 10px 5px 10px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; background: #3b82f6; color: white; }
         button:hover { background: #2563eb; }
+        .hint { background: #fef3c7; padding: 12px; border-radius: 6px; border-left: 3px solid #f59e0b; color: #92400e; font-size: 13px; margin-top: 20px; }
       </style>
     </head>
     <body>
       <div class="content">
         <h2>IFrame Content</h2>
-        <p>Click the button inside this iframe:</p>
-        <button onclick="window.parent.postMessage({action: 'button-clicked'}, '*'); this.textContent = '✓ Clicked'; this.style.background = '#16a34a';">Click Me Inside</button>
+        <div class="section">
+          <h3>About This Challenge</h3>
+          <p>This iframe contains scrollable content. The interactive button you need to click is located further down. You must scroll within this iframe to find it.</p>
+        </div>
+        <div class="section">
+          <h3>Instructions</h3>
+          <p>AI agents often struggle with content inside iframes, especially when the target element is not immediately visible and requires scrolling within the iframe's own scroll context.</p>
+          <p>This tests the ability to: switch into an iframe context, scroll within it, locate an element below the fold, and interact with it.</p>
+        </div>
+        <div class="section">
+          <h3>Additional Context</h3>
+          <p>Iframes create a separate browsing context with their own document, scroll position, and DOM tree. Automation tools need to explicitly switch into this context before they can interact with elements inside it.</p>
+          <p>Scrolling within an iframe is distinct from scrolling the parent page -- the iframe has its own viewport and scrollbar.</p>
+        </div>
+        <div class="hint">
+          <strong>Scroll down</strong> within this iframe to find the button you need to click.
+        </div>
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <p>Click the button below to complete this part of the challenge:</p>
+          <button onclick="window.parent.postMessage({action: 'button-clicked'}, '*'); this.textContent = '✓ Clicked'; this.style.background = '#16a34a';">Click Me Inside</button>
+        </div>
       </div>
     </body>
     </html>
@@ -928,8 +1010,8 @@ function IFrameChallengeWrapper({
       title={challenge.name}
       completed={challenge.completed}
       checklist={[
+        { text: "Scroll down inside the iframe to find the button", completed: iframeClicked },
         { text: "Click the button inside the iframe", completed: iframeClicked },
-        { text: "Click the button outside the iframe", completed: outsideClicked },
       ]}
     >
       <div className="space-y-4">
@@ -938,25 +1020,13 @@ function IFrameChallengeWrapper({
             ref={iframeRef}
             srcDoc={iframeContent}
             title="Interactive IFrame"
-            style={{ width: "100%", height: "200px", border: "none" }}
+            style={{ width: "100%", height: "150px", border: "none" }}
           />
         </div>
 
-        <button
-          onClick={() => setOutsideClicked(true)}
-          className={`w-full px-4 py-2 rounded transition-all font-medium ${
-            outsideClicked
-              ? "bg-green-600 text-white"
-              : "bg-purple-500 text-white hover:bg-purple-600"
-          }`}
-        >
-          {outsideClicked ? "✓ Clicked" : "Click Me (Outside)"}
-        </button>
-
         <p className="text-xs text-gray-600 text-center">
-          {!iframeClicked && "First, click the button inside the iframe above"}
-          {iframeClicked && !outsideClicked && "Now click the button outside"}
-          {iframeClicked && outsideClicked && "✓ Challenge complete!"}
+          {!iframeClicked && "Scroll down inside the iframe to find and click the hidden button"}
+          {iframeClicked && "✓ Challenge complete!"}
         </p>
       </div>
     </ChallengeCard>
@@ -1599,7 +1669,6 @@ function GraphChallengeWrapper({
     },
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
 
   const onConnect: OnConnect = (connection) => {
     setEdges((eds) => addEdge(connection, eds));
@@ -1632,7 +1701,7 @@ function GraphChallengeWrapper({
   };
 
   const onDragStart = (event: React.DragEvent<HTMLDivElement>, nodeType: string) => {
-    setDraggedNodeType(nodeType);
+    event.dataTransfer.setData("application/reactflow", nodeType);
     event.dataTransfer.effectAllowed = "move";
   };
 
@@ -1643,7 +1712,8 @@ function GraphChallengeWrapper({
 
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (!draggedNodeType || hasAddedNode) return;
+    const nodeType = event.dataTransfer.getData("application/reactflow");
+    if (!nodeType || hasAddedNode) return;
 
     const newNode = {
       id: "2",
@@ -1657,7 +1727,6 @@ function GraphChallengeWrapper({
     const updatedNodes = [...nodes, newNode];
     const layoutedNodes = autoLayoutNodes(updatedNodes);
     setNodes(layoutedNodes);
-    setDraggedNodeType(null);
   };
 
   return (
@@ -1676,8 +1745,11 @@ function GraphChallengeWrapper({
         <div className="flex gap-2 items-center">
           <span className="text-xs font-medium text-gray-700">Drag to add node:</span>
           <div
-            draggable
+            draggable={!hasAddedNode}
             onDragStart={(e) => onDragStart(e, "new")}
+            role="button"
+            aria-label="Drag to add new node to canvas"
+            tabIndex={0}
             className={`px-3 py-1 rounded text-sm cursor-move transition-all ${
               hasAddedNode
                 ? "bg-green-200 text-green-700 opacity-50 cursor-not-allowed"
@@ -1690,8 +1762,6 @@ function GraphChallengeWrapper({
 
         <div
           style={{ height: "400px", border: "2px dashed #e5e7eb", borderRadius: "8px", overflow: "hidden" }}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
         >
           <ReactFlow
             nodes={nodes}
@@ -1699,17 +1769,153 @@ function GraphChallengeWrapper({
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
             fitView
+            minZoom={0.5}
+            maxZoom={2}
+            proOptions={{ hideAttribution: true }}
           >
-            <p className="text-xs text-gray-500 p-2">Drag node here • Connect by dragging from handles</p>
+            <Background />
+            <Controls />
           </ReactFlow>
         </div>
 
-        <p className="text-xs text-gray-600 text-center">
+        <p className="text-xs text-gray-600 text-center" aria-live="polite">
           {nodes.length === 1 && "👉 Drag the &apos;📦 New Node&apos; box above into the canvas"}
           {nodes.length > 1 && edges.length === 0 && "Now drag from one node&apos;s handle to another to connect them"}
           {edges.length > 0 && "✓ Challenge complete!"}
         </p>
+      </div>
+    </ChallengeCard>
+  );
+}
+
+/* Reorder & Slider Challenge Wrapper */
+const REORDER_ITEMS = [
+  { id: "item-c", label: "3. Deploy to production", correctIndex: 2 },
+  { id: "item-a", label: "1. Write the code", correctIndex: 0 },
+  { id: "item-b", label: "2. Run the tests", correctIndex: 1 },
+];
+
+function ReorderSliderChallengeWrapper({
+  challenge,
+  onComplete,
+}: {
+  challenge: Challenge;
+  onComplete: () => void;
+}) {
+  const [items, setItems] = useState(REORDER_ITEMS);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [sliderValue, setSliderValue] = useState(0);
+
+  const isCorrectOrder = items.every((item, i) => item.correctIndex === i);
+  const sliderComplete = sliderValue === 100;
+
+  useEffect(() => {
+    if (!challenge.completed && isCorrectOrder && sliderComplete) {
+      onComplete();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCorrectOrder, sliderComplete, onComplete]);
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setOverIndex(index);
+  };
+
+  const handleDrop = (index: number) => {
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      setOverIndex(null);
+      return;
+    }
+    const newItems = [...items];
+    const [removed] = newItems.splice(dragIndex, 1);
+    newItems.splice(index, 0, removed);
+    setItems(newItems);
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  return (
+    <ChallengeCard
+      title={challenge.name}
+      completed={challenge.completed}
+      checklist={[
+        { text: "Drag items into the correct order", completed: isCorrectOrder },
+        { text: "Slide the slider all the way to the right", completed: sliderComplete },
+      ]}
+    >
+      <div className="space-y-4">
+        <p className="text-xs text-gray-600">Drag the steps into the correct order (1, 2, 3):</p>
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={() => handleDrop(index)}
+              onDragEnd={handleDragEnd}
+              data-testid={`reorder-item-${index}`}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-grab active:cursor-grabbing transition-colors ${
+                dragIndex === index
+                  ? "opacity-50 bg-blue-50 border-blue-300"
+                  : overIndex === index
+                  ? "bg-blue-100 border-blue-400"
+                  : isCorrectOrder
+                  ? "bg-green-50 border-green-300"
+                  : "bg-white border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-gray-400 flex-shrink-0">
+                <circle cx="5" cy="3" r="1.5" />
+                <circle cx="11" cy="3" r="1.5" />
+                <circle cx="5" cy="8" r="1.5" />
+                <circle cx="11" cy="8" r="1.5" />
+                <circle cx="5" cy="13" r="1.5" />
+                <circle cx="11" cy="13" r="1.5" />
+              </svg>
+              <span className="text-sm font-medium text-gray-900">{item.label}</span>
+            </div>
+          ))}
+        </div>
+        {isCorrectOrder && (
+          <p className="text-xs text-green-600 font-medium">Correct order!</p>
+        )}
+
+        <div className="border-t border-gray-200 pt-4">
+          <p className="text-xs text-gray-600 mb-2">
+            Slide all the way to the right to confirm:
+          </p>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={sliderValue}
+            onChange={(e) => setSliderValue(Number(e.target.value))}
+            className="w-full accent-blue-600"
+            aria-label="Confirmation slider"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>0</span>
+            <span className={sliderComplete ? "text-green-600 font-medium" : ""}>
+              {sliderValue}%{sliderComplete ? " — Confirmed!" : ""}
+            </span>
+            <span>100</span>
+          </div>
+        </div>
       </div>
     </ChallengeCard>
   );
@@ -1802,13 +2008,42 @@ function PopoversChallengeWrapper({
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [hasOpenedPopover, setHasOpenedPopover] = useState(false);
   const [actionClicked, setActionClicked] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleOpenPopover = () => {
-    setPopoverOpen(!popoverOpen);
-    if (!popoverOpen) {
-      setHasOpenedPopover(true);
+  const openPopover = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setPopoverOpen(true);
+    setHasOpenedPopover(true);
+  };
+
+  const startCloseTimer = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
+      setPopoverOpen(false);
+      closeTimerRef.current = null;
+    }, 2000);
+  };
+
+  const handleClick = () => {
+    if (popoverOpen) {
+      setPopoverOpen(false);
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    } else {
+      openPopover();
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!challenge.completed && hasOpenedPopover && actionClicked) {
@@ -1822,13 +2057,17 @@ function PopoversChallengeWrapper({
       title={challenge.name}
       completed={challenge.completed}
       checklist={[
-        { text: "Open the popover", completed: hasOpenedPopover },
-        { text: "Click the action button", completed: actionClicked },
+        { text: "Open the popover (click or hover)", completed: hasOpenedPopover },
+        { text: "Click the action button inside", completed: actionClicked },
       ]}
     >
-      <div className="relative">
+      <div
+        className="relative"
+        onMouseEnter={openPopover}
+        onMouseLeave={startCloseTimer}
+      >
         <button
-          onClick={handleOpenPopover}
+          onClick={handleClick}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all"
         >
           Open Popover {hasOpenedPopover ? "✓" : ""}
@@ -1847,6 +2086,10 @@ function PopoversChallengeWrapper({
                 onClick={() => {
                   setActionClicked(true);
                   setPopoverOpen(false);
+                  if (closeTimerRef.current) {
+                    clearTimeout(closeTimerRef.current);
+                    closeTimerRef.current = null;
+                  }
                 }}
                 className={`w-full px-3 py-2 rounded transition-all text-sm font-medium ${
                   actionClicked
@@ -2394,9 +2637,14 @@ function TabsChallengeWrapper({
         { text: "Find secret code from a tab", completed: tabCodeValid },
         { text: "Find secret code from nested accordion", completed: nestCodeValid },
       ]}
-      className="md:col-span-2"
     >
       <div className="space-y-4">
+        <p className="text-xs text-gray-600">
+          Two secret codes are hidden in the UI below. One is inside a tab you haven&apos;t viewed yet — switch between tabs to find it.
+          The other is buried in a nested accordion — expand each level until you reach the deepest item.
+          Enter both codes in the inputs at the bottom.
+        </p>
+
         {/* Tabs */}
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="flex border-b border-gray-200">

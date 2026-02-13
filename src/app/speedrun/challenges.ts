@@ -4,6 +4,7 @@ export const CHALLENGES_LIST = [
   { id: "table", name: "Table Challenge", description: "Filter, select a row, and add a new row" },
   { id: "visible", name: "Visibility Challenge", description: "Click the hidden and partially hidden buttons" },
   { id: "graph", name: "Graph Challenge", description: "Add a node and connect it to an existing one" },
+  { id: "reorder-slider", name: "Reorder & Slider", description: "Drag items into correct order and slide to confirm" },
   { id: "dialogs", name: "Dialogs Challenge", description: "Trigger all three dialog types" },
   { id: "popovers", name: "Popovers Challenge", description: "Open a popover and click an action button inside" },
   { id: "iframe", name: "IFrame Challenge", description: "Interact with an embedded iframe content" },
