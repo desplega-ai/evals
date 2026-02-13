@@ -9,6 +9,7 @@ import {
   useNodesState,
   useEdgesState,
   type OnConnect,
+  type Node,
   Position,
   Background,
   Controls,
@@ -1659,46 +1660,25 @@ function GraphChallengeWrapper({
   challenge: Challenge;
   onComplete: () => void;
 }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([
-    {
-      id: "1",
-      data: { label: "Start" },
-      position: { x: 100, y: 100 },
-      sourcePosition: Position.Right as const,
-      targetPosition: Position.Left as const,
-    },
-  ]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [addedNodes, setAddedNodes] = useState<Set<string>>(new Set());
 
   const onConnect: OnConnect = (connection) => {
     setEdges((eds) => addEdge(connection, eds));
   };
 
-  const hasAddedNode = nodes.length > 1;
+  const hasStart = addedNodes.has("start");
+  const hasEnd = addedNodes.has("end");
+  const hasBothNodes = hasStart && hasEnd;
   const hasConnections = edges.length > 0;
 
   useEffect(() => {
-    if (!challenge.completed && hasAddedNode && hasConnections) {
+    if (!challenge.completed && hasBothNodes && hasConnections) {
       onComplete();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAddedNode, hasConnections, onComplete]);
-
-  // Auto-layout nodes - spreads them horizontally
-  const autoLayoutNodes = (nodesToLayout: typeof nodes) => {
-    if (nodesToLayout.length <= 1) return nodesToLayout;
-
-    const spacing = 300;
-    return nodesToLayout.map((node, index) => ({
-      ...node,
-      position: {
-        x: index * spacing,
-        y: 100,
-      },
-      sourcePosition: Position.Right as const,
-      targetPosition: Position.Left as const,
-    }));
-  };
+  }, [hasBothNodes, hasConnections, onComplete]);
 
   const onDragStart = (event: React.DragEvent<HTMLDivElement>, nodeType: string) => {
     event.dataTransfer.setData("application/reactflow", nodeType);
@@ -1713,79 +1693,104 @@ function GraphChallengeWrapper({
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const nodeType = event.dataTransfer.getData("application/reactflow");
-    if (!nodeType || hasAddedNode) return;
+    if (!nodeType || addedNodes.has(nodeType)) return;
 
+    const isStart = nodeType === "start";
     const newNode = {
-      id: "2",
-      data: { label: "Node 2" },
-      position: { x: 400, y: 100 },
+      id: nodeType,
+      data: { label: isStart ? "Start" : "End" },
+      position: { x: isStart ? 100 : 400, y: 100 },
       sourcePosition: Position.Right as const,
       targetPosition: Position.Left as const,
+      style: {
+        background: isStart ? "#3b82f6" : "#ef4444",
+        color: "white",
+        border: "2px solid #fff",
+        borderRadius: "8px",
+        padding: "10px",
+        fontSize: "12px",
+        fontWeight: "bold" as const,
+      },
     };
 
-    // Add new node and auto-layout all nodes
-    const updatedNodes = [...nodes, newNode];
-    const layoutedNodes = autoLayoutNodes(updatedNodes);
-    setNodes(layoutedNodes);
+    setNodes((nds) => [...nds, newNode]);
+    setAddedNodes((prev) => new Set([...prev, nodeType]));
   };
+
+  const NODE_PALETTE = [
+    { type: "start", label: "Start", color: "#3b82f6", added: hasStart },
+    { type: "end", label: "End", color: "#ef4444", added: hasEnd },
+  ];
 
   return (
     <ChallengeCard
       title={challenge.name}
       completed={challenge.completed}
       checklist={[
-        { text: "One 'Start' node already added", completed: true },
-        { text: "Drag a second node into the canvas", completed: hasAddedNode },
-        { text: "Connect the two nodes", completed: hasConnections },
+        { text: "Drag the Start node onto the canvas", completed: hasStart },
+        { text: "Drag the End node onto the canvas", completed: hasEnd },
+        { text: "Connect Start to End by dragging between handles", completed: hasConnections },
       ]}
       className="md:col-span-2"
     >
-      <div className="space-y-4">
-        <p className="text-xs text-gray-600 mb-2">There&apos;s already a &quot;Start&quot; node on the canvas. Drag a new node to add a second one:</p>
-        <div className="flex gap-2 items-center">
-          <span className="text-xs font-medium text-gray-700">Drag to add node:</span>
-          <div
-            draggable={!hasAddedNode}
-            onDragStart={(e) => onDragStart(e, "new")}
-            role="button"
-            aria-label="Drag to add new node to canvas"
-            tabIndex={0}
-            className={`px-3 py-1 rounded text-sm cursor-move transition-all ${
-              hasAddedNode
-                ? "bg-green-200 text-green-700 opacity-50 cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-          >
-            📦 New Node
+      <div className="flex gap-4">
+        {/* Node palette sidebar */}
+        <div className="w-36 flex-shrink-0 space-y-3">
+          <p className="text-xs font-medium text-gray-700">Node Types</p>
+          <p className="text-xs text-gray-500">Drag each node onto the canvas to the right, then connect them by dragging from one node&apos;s handle to the other.</p>
+          <div className="space-y-2">
+            {NODE_PALETTE.map((node) => (
+              <div
+                key={node.type}
+                draggable={!node.added}
+                onDragStart={(e) => onDragStart(e, node.type)}
+                role="button"
+                aria-label={`Drag ${node.label} node to canvas`}
+                tabIndex={0}
+                className={`px-3 py-2 rounded-lg text-sm font-bold text-white text-center transition-all border-2 border-white ${
+                  node.added
+                    ? "opacity-40 cursor-not-allowed"
+                    : "cursor-grab active:cursor-grabbing hover:border-gray-400"
+                }`}
+                style={{ background: node.color }}
+              >
+                {node.label} {node.added ? "✓" : ""}
+              </div>
+            ))}
           </div>
         </div>
 
-        <div
-          style={{ height: "400px", border: "2px dashed #e5e7eb", borderRadius: "8px", overflow: "hidden" }}
-        >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            fitView
-            minZoom={0.5}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
+        {/* Canvas */}
+        <div className="flex-1 space-y-2">
+          <div
+            style={{ height: "400px", border: "2px dashed #e5e7eb", borderRadius: "8px", overflow: "hidden" }}
           >
-            <Background />
-            <Controls />
-          </ReactFlow>
-        </div>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              fitView
+              minZoom={0.5}
+              maxZoom={2}
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background />
+              <Controls />
+            </ReactFlow>
+          </div>
 
-        <p className="text-xs text-gray-600 text-center" aria-live="polite">
-          {nodes.length === 1 && "👉 Drag the &apos;📦 New Node&apos; box above into the canvas"}
-          {nodes.length > 1 && edges.length === 0 && "Now drag from one node&apos;s handle to another to connect them"}
-          {edges.length > 0 && "✓ Challenge complete!"}
-        </p>
+          <p className="text-xs text-gray-600 text-center" aria-live="polite">
+            {!hasStart && !hasEnd && "Drag the Start and End nodes from the palette on the left onto the canvas"}
+            {hasStart && !hasEnd && "Now drag the End node onto the canvas"}
+            {!hasStart && hasEnd && "Now drag the Start node onto the canvas"}
+            {hasBothNodes && !hasConnections && "Both nodes added — now connect them by dragging from one node\u2019s handle (small circle) to the other"}
+            {hasConnections && "✓ Challenge complete!"}
+          </p>
+        </div>
       </div>
     </ChallengeCard>
   );
