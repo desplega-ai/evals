@@ -270,7 +270,7 @@ function Autocomplete<T extends { id: number }>({
         // Filter out already selected items
         const filtered = searchResults.filter((item) => !selectedKeys.has(getKey(item)));
         setResults(filtered);
-        setHighlightedIndex(-1);
+        setHighlightedIndex(filtered.length > 0 ? 0 : -1);
       } finally {
         setIsLoading(false);
       }

@@ -2211,8 +2211,9 @@ function AutocompleteChallengeWrapper({
           !selectedUsers.find((s) => s.id === u.id) &&
           (u.name.toLowerCase().includes(lower) || u.email.toLowerCase().includes(lower))
       );
-      setUserResults(filtered.slice(0, 5));
-      setUserHighlight(-1);
+      const sliced = filtered.slice(0, 5);
+      setUserResults(sliced);
+      setUserHighlight(sliced.length > 0 ? 0 : -1);
     }, 300);
   }, [selectedUsers]);
 
@@ -2229,8 +2230,9 @@ function AutocompleteChallengeWrapper({
         (c) =>
           c.name.toLowerCase().includes(lower) || c.country.toLowerCase().includes(lower)
       );
-      setCityResults(filtered.slice(0, 5));
-      setCityHighlight(-1);
+      const sliced = filtered.slice(0, 5);
+      setCityResults(sliced);
+      setCityHighlight(sliced.length > 0 ? 0 : -1);
     }, 300);
   }, []);
 
