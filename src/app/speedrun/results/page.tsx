@@ -14,8 +14,16 @@ interface ResultsData {
   completedChallenges: number;
   totalChallenges: number;
   completedIds?: string[];
+  challengeTimes?: Record<string, number>;
   userAgent: string;
   platform: string;
+}
+
+function formatChallengeTime(milliseconds: number): string {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function ResultsPageContent() {
@@ -131,6 +139,7 @@ function ResultsPageContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {CHALLENGES_LIST.map((challenge) => {
                   const completed = results.completedIds!.includes(challenge.id);
+                  const time = results.challengeTimes?.[challenge.id];
                   return (
                     <div
                       key={challenge.id}
@@ -147,7 +156,12 @@ function ResultsPageContent() {
                       }`}>
                         {completed ? "✓" : "✗"}
                       </span>
-                      <span className="text-sm font-medium">{challenge.name}</span>
+                      <span className="text-sm font-medium flex-1">{challenge.name}</span>
+                      {completed && time !== undefined && (
+                        <span className="text-xs font-mono text-green-600 ml-2">
+                          {formatChallengeTime(time)}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
