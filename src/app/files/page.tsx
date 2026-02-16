@@ -54,34 +54,6 @@ export default function FilesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleAlternativeUpload = () => {
-    // Create input element dynamically - this won't work with Playwright's set_input_files
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.style.display = 'none';
-
-    input.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      const files = target.files;
-      if (!files) return;
-
-      const newFiles: UploadedFile[] = Array.from(files).map(file => ({
-        id: `${Date.now()}-${Math.random()}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        file: file
-      }));
-
-      setUploadedFiles(prev => [...prev, ...newFiles]);
-      document.body.removeChild(input);
-    };
-
-    document.body.appendChild(input);
-    input.click();
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -109,12 +81,6 @@ export default function FilesPage() {
           <div className="bg-gray-50 p-6 rounded-lg">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Upload Files</h2>
-              <button
-                onClick={handleAlternativeUpload}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-              >
-                Choose Files
-              </button>
             </div>
 
             <div className="mb-6">
@@ -123,7 +89,8 @@ export default function FilesPage() {
                 type="file"
                 multiple
                 onChange={handleFileUpload}
-                className="hidden"
+                aria-label="File upload"
+                className="sr-only"
               />
               <button
                 onClick={() => fileInputRef.current?.click()}

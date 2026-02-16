@@ -97,7 +97,8 @@ export function FileUploadChallengeWrapper({ challenge, onComplete }: ChallengeW
             type="file"
             accept=".txt"
             onChange={handleUpload}
-            className="hidden"
+            aria-label="File upload"
+            className="sr-only"
           />
           <button
             onClick={() => fileInputRef.current?.click()}
