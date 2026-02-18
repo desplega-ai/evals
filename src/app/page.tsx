@@ -20,6 +20,7 @@ const routes = [
     { path: "/restaurants", name: "Restaurants Map", description: "Mapbox integration with NYC restaurants" },
     { path: "/otp", name: "OTP Demo", description: "One-Time Password generation and validation" },
   { path: "/loading-demo", name: "Loading Demo", description: "Loading states, skeletons, and spinners" },
+  { path: "/toasts", name: "Toasts Demo", description: "Toast notifications with auto-dismiss, actions, and countdown" },
   { path: "/dates", name: "Dates Demo", description: "Date pickers with various libraries and 22 variants" },
   { path: "/storage", name: "Storage Demo", description: "Browser storage APIs: localStorage, sessionStorage, cookies, IndexedDB" },
   { path: "/tabs", name: "Tabs & Accordions Demo", description: "Tabs, accordions, nested panels, hidden content discovery" },
