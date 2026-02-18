@@ -72,6 +72,22 @@ jobs:
           claude plugin install qa-use@desplega.ai
           npm install -g @desplega.ai/qa-use
 
+      - name: Write CI-specific Claude instructions
+        if: steps.approval.outputs.approved == 'true'
+        run: |
+          cat >> CLAUDE.md << 'CIEOF'
+
+          ## CI/CD Runner Instructions (Auto-generated)
+
+          You are running in CI with `--print` mode. Follow these rules strictly:
+
+          - **NEVER use `run_in_background: true`** when calling the Task tool. ALL tasks MUST run in the foreground. Background tasks are killed when `--print` mode exits.
+          - **NEVER use `run_in_background: true`** for ANY tool call. This is a non-interactive environment.
+          - Execute all steps sequentially and wait for each to complete before proceeding.
+          - Do not attempt interactive user prompts — make autonomous decisions.
+          - If a step fails, report the failure and continue to the next step where possible.
+          CIEOF
+
       - name: Wait for Vercel Preview
         if: steps.approval.outputs.approved == 'true'
         uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
@@ -89,7 +105,20 @@ jobs:
           CI: true
         run: |
           # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model haiku "/qa-use:verify-pr #${{ github.event.pull_request.number || inputs.pr_number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
+          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model sonnet "/qa-use:verify-pr #${{ github.event.pull_request.number || inputs.pr_number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
+
+      - name: Verify report was generated
+        if: steps.approval.outputs.approved == 'true'
+        run: |
+          REPORT="/tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md"
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::Verification report was not generated at $REPORT"
+            echo "This usually means Claude Code exited before completing verification."
+            echo "Check the 'Run PR Verification' step logs for details."
+            exit 1
+          fi
+          echo "Report generated successfully:"
+          wc -l "$REPORT"
 
       - name: Post Report to PR
         if: always() && steps.approval.outputs.approved == 'true'
