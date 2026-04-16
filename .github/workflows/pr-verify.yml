@@ -30,114 +30,88 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history for diff analysis
+          fetch-depth: 0
 
-      - name: Check PR approval status
-        id: approval
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Detect changed routes
+        id: changes
         run: |
-          # REVIEW_DECISION=$(gh pr view ${{ github.event.pull_request.number || inputs.pr_number }} --json reviewDecision -q '.reviewDecision')
-          # echo "Review decision: $REVIEW_DECISION"
-          # if [ "$REVIEW_DECISION" != "APPROVED" ]; then
-          #   echo "PR is not approved yet. Skipping verification."
-          #   echo "approved=false" >> $GITHUB_OUTPUT
-          # else
-          #   echo "approved=true" >> $GITHUB_OUTPUT
-          # fi
-          # For demonstration purposes, we will assume all PRs are approved.
-          echo "approved=true" >> $GITHUB_OUTPUT
-
-      - name: Setup Node.js
-        if: steps.approval.outputs.approved == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Claude Code CLI
-        if: steps.approval.outputs.approved == 'true'
-        run: |
-          curl -fsSL https://claude.ai/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Verify Claude CLI Installation
-        if: steps.approval.outputs.approved == 'true'
-        run: |
-          claude --version || (echo "Claude CLI installation failed" && exit 1)
-
-      - name: Install qa-use plugin and CLI
-        if: steps.approval.outputs.approved == 'true'
-        run: |
-          claude plugin marketplace add desplega-ai/qa-use
-          claude plugin install qa-use@desplega.ai
-          npm install -g @desplega.ai/qa-use
-
-      - name: Write CI-specific Claude instructions
-        if: steps.approval.outputs.approved == 'true'
-        run: |
-          cat >> CLAUDE.md << 'CIEOF'
-
-          ## CI/CD Runner Instructions (Auto-generated)
-
-          You are running in CI with `--print` mode. Follow these rules strictly:
-
-          - **NEVER use `run_in_background: true`** when calling the Task tool. ALL tasks MUST run in the foreground. Background tasks are killed when `--print` mode exits.
-          - **NEVER use `run_in_background: true`** for ANY tool call. This is a non-interactive environment.
-          - Execute all steps sequentially and wait for each to complete before proceeding.
-          - Do not attempt interactive user prompts — make autonomous decisions.
-          - If a step fails, report the failure and continue to the next step where possible.
-          CIEOF
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          ROUTES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- 'src/app/**/page.tsx' 'src/app/page.tsx' \
+            | awk '{
+                sub(/^src\/app/, "");
+                sub(/\/page\.tsx$/, "");
+                if ($0 == "") print "/";
+                else print $0;
+              }' \
+            | sort -u \
+            | paste -sd ',' -)
+          if [ -z "$ROUTES" ]; then
+            echo "No page.tsx files changed in this PR. Skipping Argus verification."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Changed routes: $ROUTES"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "routes=$ROUTES" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Wait for Vercel Preview
-        if: steps.approval.outputs.approved == 'true'
+        if: steps.changes.outputs.has_changes == 'true'
         uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
         id: vercel
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           max_timeout: 300
 
-      - name: Run PR Verification
-        if: steps.approval.outputs.approved == 'true'
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          QA_USE_API_KEY: ${{ secrets.QA_USE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI: true
-        run: |
-          # Run Claude Code with the verify-pr command using Vercel preview URL
-          claude --print --verbose --dangerously-skip-permissions --output-format stream-json --model sonnet "/qa-use:verify-pr #${{ github.event.pull_request.number || inputs.pr_number }} --base-url ${{ steps.vercel.outputs.url }}" 2>&1 | jq -c 'select(.type == "assistant" or .type == "tool_use" or .type == "result")'
-
-      - name: Verify report was generated
-        if: steps.approval.outputs.approved == 'true'
-        run: |
-          REPORT="/tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md"
-          if [ ! -f "$REPORT" ]; then
-            echo "::error::Verification report was not generated at $REPORT"
-            echo "This usually means Claude Code exited before completing verification."
-            echo "Check the 'Run PR Verification' step logs for details."
-            exit 1
-          fi
-          echo "Report generated successfully:"
-          wc -l "$REPORT"
-
-      - name: Post Report to PR
-        if: always() && steps.approval.outputs.approved == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -f /tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md ]; then
-            gh pr comment ${{ github.event.pull_request.number || inputs.pr_number }} \
-              --body-file /tmp/pr-verify-report-${{ github.event.pull_request.number || inputs.pr_number }}.md
-          fi
-
-      - name: Upload Verification Artifacts
-        if: always() && steps.approval.outputs.approved == 'true'
-        uses: actions/upload-artifact@v4
+      - name: Run Argus verification
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: desplega-ai/argus-action@main
         with:
-          name: pr-verification-${{ github.event.pull_request.number || inputs.pr_number }}
-          path: |
-            /tmp/pr-verify-*.png
-            /tmp/pr-verify-*.json
-            /tmp/pr-verify-*.jsonl
-            /tmp/pr-verify-*.log
-            /tmp/pr-verify-report-*.md
+          scenario: pr-verify
+          base_url: ${{ steps.vercel.outputs.url }}
+          fail_on: never
+          extra_vars: |
+            {"CHANGED_ROUTES": "${{ steps.changes.outputs.routes }}"}
+          prompt_template: |
+            You are running a fast smoke check on PR #${PR_NUMBER} in ${REPO} (commit ${COMMIT_SHA})
+            against the Vercel preview at ${BASE_URL}.
+
+            Scope: only the routes added or modified in this PR. Do NOT audit the rest of the app.
+
+            Routes changed in this PR (comma-separated): ${CHANGED_ROUTES}
+
+            For EVERY changed route you MUST:
+              1. Navigate to ${BASE_URL}<route>.
+              2. Confirm the page renders without JavaScript errors or obviously broken layout.
+              3. Exercise each primary interactive control (button, form field, modal trigger, etc.) once.
+              4. Capture at least one screenshot of the route in its final state. If the route exposes
+                 distinct UI states (e.g. a modal open vs. closed), capture a screenshot per state.
+
+            Keep it short — this is a smoke check, not a full regression suite. Stop as soon as every
+            changed route has been covered.
+
+            Report format (this is the PR comment body — follow it strictly):
+
+              ## Summary
+              <one-line overall result>
+
+              ## Per-route results
+              For EACH route, output a section like:
+
+              ### `<route>` — PASS | FAIL
+              - Observation: <one line>
+              - Interactions exercised: <short list>
+              - Console errors: <none | describe>
+              - Screenshots:
+                ![<route> — <state>](<screenshot_url>)
+
+              ## Overall: PASS | FAIL
+
+            Hard requirements for the report:
+              - Every route section MUST embed at least one screenshot using the `![alt](url)`
+                markdown image syntax with the URL produced by the screenshot tool.
+              - If you could not capture a screenshot for a route, mark that route FAIL and explain
+                why in the Observation line.
+              - Do not omit the screenshots section even for passing routes.
+        env:
+          ARGUS_API_KEY: ${{ secrets.ARGUS_API_KEY }}
