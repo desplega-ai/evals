@@ -65,7 +65,7 @@ jobs:
 
       - name: Run Argus verification
         if: steps.changes.outputs.has_changes == 'true'
-        uses: desplega-ai/argus-action@v1
+        uses: desplega-ai/argus-action@main
         with:
           scenario: pr-verify
           base_url: ${{ steps.vercel.outputs.url }}
