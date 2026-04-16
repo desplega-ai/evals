@@ -80,18 +80,38 @@ jobs:
 
             Routes changed in this PR (comma-separated): ${CHANGED_ROUTES}
 
-            For each changed route:
+            For EVERY changed route you MUST:
               1. Navigate to ${BASE_URL}<route>.
               2. Confirm the page renders without JavaScript errors or obviously broken layout.
               3. Exercise each primary interactive control (button, form field, modal trigger, etc.) once.
-              4. Capture a screenshot.
+              4. Capture at least one screenshot of the route in its final state. If the route exposes
+                 distinct UI states (e.g. a modal open vs. closed), capture a screenshot per state.
 
             Keep it short — this is a smoke check, not a full regression suite. Stop as soon as every
             changed route has been covered.
 
-            Report format:
-              - One bullet per route: pass/fail verdict + a one-line observation.
-              - Call out any console errors or clearly broken states.
-              - End with an overall PASS / FAIL summary line.
+            Report format (this is the PR comment body — follow it strictly):
+
+              ## Summary
+              <one-line overall result>
+
+              ## Per-route results
+              For EACH route, output a section like:
+
+              ### `<route>` — PASS | FAIL
+              - Observation: <one line>
+              - Interactions exercised: <short list>
+              - Console errors: <none | describe>
+              - Screenshots:
+                ![<route> — <state>](<screenshot_url>)
+
+              ## Overall: PASS | FAIL
+
+            Hard requirements for the report:
+              - Every route section MUST embed at least one screenshot using the `![alt](url)`
+                markdown image syntax with the URL produced by the screenshot tool.
+              - If you could not capture a screenshot for a route, mark that route FAIL and explain
+                why in the Observation line.
+              - Do not omit the screenshots section even for passing routes.
         env:
           ARGUS_API_KEY: ${{ secrets.ARGUS_API_KEY }}
