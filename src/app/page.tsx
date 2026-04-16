@@ -29,6 +29,7 @@ const routes = [
   { path: "/keyboard", name: "Keyboard Navigation Demo", description: "Keyboard-only interactions: focus traps, arrow keys, shortcuts, skip links" },
   { path: "/pagination", name: "Pagination & Infinite Scroll", description: "Classic pagination, infinite scroll, load more, cursor-based navigation" },
   { path: "/webmcp", name: "WebMCP Demo", description: "WebMCP API concepts: tool registration, execution, and context" },
+  { path: "/pop-ups", name: "Pop-ups Demo", description: "Cookie banners, newsletter modals, promo bars, exit-intent overlays" },
 ];
 
 function HomeContent() {
