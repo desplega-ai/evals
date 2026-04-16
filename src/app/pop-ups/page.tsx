@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-type PopupKind = "cookie" | "newsletter" | "exitIntent" | "promo";
+type PopupKind =
+  | "cookie"
+  | "newsletter"
+  | "exitIntent"
+  | "promo"
+  | "multiStep";
 
 interface LogEntry {
   id: string;
@@ -16,12 +21,18 @@ const POPUP_LABEL: Record<PopupKind, string> = {
   newsletter: "Newsletter modal",
   exitIntent: "Exit-intent overlay",
   promo: "Promo bar",
+  multiStep: "Multi-step confirmation",
 };
+
+const MULTI_STEP_TOTAL = 3;
+const MULTI_STEP_CONFIRM_WORD = "DELETE";
 
 export default function PopupsPage() {
   const [open, setOpen] = useState<Set<PopupKind>>(new Set());
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [email, setEmail] = useState("");
+  const [multiStepCurrent, setMultiStepCurrent] = useState(1);
+  const [confirmText, setConfirmText] = useState("");
 
   const addLog = (message: string) => {
     setLogs((prev) => [
@@ -34,7 +45,15 @@ export default function PopupsPage() {
     ]);
   };
 
+  const resetMultiStep = () => {
+    setMultiStepCurrent(1);
+    setConfirmText("");
+  };
+
   const showPopup = (kind: PopupKind) => {
+    if (kind === "multiStep") {
+      resetMultiStep();
+    }
     setOpen((prev) => {
       if (prev.has(kind)) return prev;
       const next = new Set(prev);
@@ -52,6 +71,14 @@ export default function PopupsPage() {
       return next;
     });
     addLog(`Dismissed: ${POPUP_LABEL[kind]} (${reason})`);
+    if (kind === "multiStep") {
+      resetMultiStep();
+    }
+  };
+
+  const goToMultiStep = (target: number, reason: string) => {
+    setMultiStepCurrent(target);
+    addLog(`Multi-step: step ${target}/${MULTI_STEP_TOTAL} (${reason})`);
   };
 
   const isOpen = (kind: PopupKind) => open.has(kind);
@@ -138,6 +165,15 @@ export default function PopupsPage() {
               className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Show promo bar
+            </button>
+            <button
+              type="button"
+              data-testid="trigger-multi-step"
+              onClick={() => showPopup("multiStep")}
+              disabled={isOpen("multiStep")}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Show multi-step confirmation
             </button>
           </div>
         </section>
@@ -332,6 +368,134 @@ export default function PopupsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isOpen("multiStep") && (
+        <div
+          className="fixed inset-0 z-[55] bg-black/60 flex items-center justify-center p-4"
+          onClick={() => dismissPopup("multiStep", "backdrop")}
+          data-testid="popup-multi-step-backdrop"
+        >
+          <div
+            data-testid="popup-multi-step"
+            data-step={multiStepCurrent}
+            className="bg-white rounded-lg shadow-xl max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="Multi-step confirmation"
+          >
+            <button
+              type="button"
+              data-testid="multi-step-close"
+              onClick={() => dismissPopup("multiStep", "close-x")}
+              aria-label="Close confirmation"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl leading-none"
+            >
+              ×
+            </button>
+
+            <div
+              data-testid="multi-step-indicator"
+              className="px-6 pt-6 text-xs font-medium uppercase tracking-wide text-gray-500"
+            >
+              Step {multiStepCurrent} of {MULTI_STEP_TOTAL}
+            </div>
+
+            {multiStepCurrent === 1 && (
+              <div data-testid="multi-step-panel-1" className="p-6">
+                <h3 className="text-xl font-semibold mb-2">Delete your account?</h3>
+                <p className="text-gray-600 mb-6">
+                  This will permanently remove your profile, preferences, and all associated data.
+                  You&apos;ll have a chance to confirm before anything is deleted.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    data-testid="multi-step-cancel"
+                    onClick={() => dismissPopup("multiStep", "cancel-step-1")}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="multi-step-continue"
+                    onClick={() => goToMultiStep(2, "continue")}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {multiStepCurrent === 2 && (
+              <div data-testid="multi-step-panel-2" className="p-6">
+                <h3 className="text-xl font-semibold mb-2">Confirm deletion</h3>
+                <p className="text-gray-600 mb-4">
+                  Type <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono">{MULTI_STEP_CONFIRM_WORD}</code> to confirm.
+                  This action cannot be undone.
+                </p>
+                <input
+                  type="text"
+                  data-testid="multi-step-confirm-input"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={MULTI_STEP_CONFIRM_WORD}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 mb-4 font-mono"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-between">
+                  <button
+                    type="button"
+                    data-testid="multi-step-back"
+                    onClick={() => goToMultiStep(1, "back")}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  >
+                    ← Back
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      data-testid="multi-step-cancel"
+                      onClick={() => dismissPopup("multiStep", "cancel-step-2")}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="multi-step-confirm"
+                      onClick={() => goToMultiStep(3, "confirm")}
+                      disabled={confirmText !== MULTI_STEP_CONFIRM_WORD}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Delete account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {multiStepCurrent === 3 && (
+              <div data-testid="multi-step-panel-3" className="p-6 text-center">
+                <div className="text-4xl mb-3">✓</div>
+                <h3 className="text-xl font-semibold mb-2">Account deleted</h3>
+                <p className="text-gray-600 mb-6">
+                  Your account and all associated data have been permanently removed.
+                </p>
+                <button
+                  type="button"
+                  data-testid="multi-step-done"
+                  onClick={() => dismissPopup("multiStep", "done")}
+                  className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
