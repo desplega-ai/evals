@@ -32,6 +32,16 @@ pnpm start    # Start production server
 pnpm lint     # Run linting
 ```
 
+## Versioning
+
+The app version lives in `package.json` and is rendered in the top-right corner of every page via `src/app/layout.tsx` (imported at build time — Next.js serializes the import). Bump it on any user-visible change using semver:
+
+- **Patch** (`0.1.1 → 0.1.2`): bug fixes, copy tweaks, styling adjustments on existing pages.
+- **Minor** (`0.1.x → 0.2.0`): new eval page, new interaction variant, new route in the home list.
+- **Major** (`0.x.y → 1.0.0`): reserved for breaking changes to the eval surface (renaming routes, removing pages).
+
+When you finish a change that touches `src/app/**` or adds a route, bump `version` in `package.json` in the same commit. No changelog required — git log is the source of truth.
+
 ## qa-use Testing
 
 This project is configured for qa-use browser automation testing.
