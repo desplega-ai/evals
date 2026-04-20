@@ -30,6 +30,7 @@ const routes = [
   { path: "/pagination", name: "Pagination & Infinite Scroll", description: "Classic pagination, infinite scroll, load more, cursor-based navigation" },
   { path: "/webmcp", name: "WebMCP Demo", description: "WebMCP API concepts: tool registration, execution, and context" },
   { path: "/pop-ups", name: "Pop-ups Demo", description: "Cookie banners, newsletter modals, promo bars, exit-intent overlays" },
+  { path: "/shadow-dom", name: "Shadow DOM Demo", description: "Open, closed, and nested shadow roots with slotted content" },
 ];
 
 function HomeContent() {
