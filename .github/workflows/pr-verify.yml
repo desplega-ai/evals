@@ -35,25 +35,109 @@ jobs:
       - name: Detect changed routes
         id: changes
         run: |
+          set -euo pipefail
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
-          ROUTES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- 'src/app/**/page.tsx' 'src/app/page.tsx' \
-            | awk '{
-                sub(/^src\/app/, "");
-                sub(/\/page\.tsx$/, "");
-                if ($0 == "") print "/";
-                else print $0;
-              }' \
-            | sort -u \
-            | paste -sd ',' -)
+
+          # Any file under src/app/** counts — a new popup variant can land as
+          # a sibling component without touching page.tsx.
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- 'src/app/**' || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "No src/app/ changes in this PR. Skipping Argus verification."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Map each changed file to its nearest ancestor route directory (the
+          # closest directory containing a page.tsx). Files directly under
+          # src/app/ (layout, globals.css) map to "/".
+          ROUTES=""
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            dir=$(dirname "$file")
+            while true; do
+              if [ -f "$dir/page.tsx" ]; then
+                break
+              fi
+              case "$dir" in
+                src/app|.|/) break ;;
+              esac
+              dir=$(dirname "$dir")
+            done
+            if [ "$dir" = "src/app" ]; then
+              if [ -f "src/app/page.tsx" ]; then
+                route="/"
+              else
+                continue
+              fi
+            elif [ -f "$dir/page.tsx" ]; then
+              route="${dir#src/app}"
+            else
+              continue
+            fi
+            ROUTES="$ROUTES"$'\n'"$route"
+          done <<< "$CHANGED"
+
+          ROUTES=$(printf '%s\n' "$ROUTES" | grep -v '^$' | sort -u | paste -sd ',' -)
+
           if [ -z "$ROUTES" ]; then
-            echo "No page.tsx files changed in this PR. Skipping Argus verification."
+            echo "No route-mapped changes. Skipping Argus verification."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             echo "Changed routes: $ROUTES"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "routes=$ROUTES" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Gather per-route test specs
+        id: specs
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          set -euo pipefail
+          ROUTES="${{ steps.changes.outputs.routes }}"
+
+          SPECS_FILE=$(mktemp)
+          IFS=',' read -ra ROUTE_ARR <<< "$ROUTES"
+          for route in "${ROUTE_ARR[@]}"; do
+            if [ "$route" = "/" ]; then
+              test_path="src/app/TEST.md"
+            else
+              test_path="src/app${route}/TEST.md"
+            fi
+            {
+              echo "### Route: ${route}"
+              echo ""
+              if [ -f "$test_path" ]; then
+                cat "$test_path"
+              else
+                echo "_(no TEST.md found for this route — run a generic E2E pass: exercise every visible interactive control and capture one screenshot per distinct UI state you reach)_"
+              fi
+              echo ""
+              echo "---"
+              echo ""
+            } >> "$SPECS_FILE"
+          done
+
+          SPECS_CONTENT=$(cat "$SPECS_FILE")
+
+          # Build a single-line, correctly-escaped JSON object using jq so
+          # newlines and quotes in TEST.md content don't break extra_vars.
+          EXTRA_VARS=$(jq -cn \
+            --arg routes "$ROUTES" \
+            --arg specs "$SPECS_CONTENT" \
+            '{CHANGED_ROUTES: $routes, ROUTE_TEST_SPECS: $specs}')
+
+          {
+            echo "extra_vars<<__EOF_EXTRA_VARS__"
+            echo "$EXTRA_VARS"
+            echo "__EOF_EXTRA_VARS__"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Gathered test specs for routes: $ROUTES"
+          echo "--- ROUTE_TEST_SPECS preview ---"
+          echo "$SPECS_CONTENT"
+          echo "--- end preview ---"
 
       - name: Wait for Vercel Preview
         if: steps.changes.outputs.has_changes == 'true'
@@ -70,48 +154,70 @@ jobs:
           scenario: pr-verify
           base_url: ${{ steps.vercel.outputs.url }}
           fail_on: never
-          extra_vars: |
-            {"CHANGED_ROUTES": "${{ steps.changes.outputs.routes }}"}
+          extra_vars: ${{ steps.specs.outputs.extra_vars }}
           prompt_template: |
-            You are running a fast smoke check on PR #${PR_NUMBER} in ${REPO} (commit ${COMMIT_SHA})
+            You are verifying PR #${PR_NUMBER} in ${REPO} (commit ${COMMIT_SHA})
             against the Vercel preview at ${BASE_URL}.
 
-            Scope: only the routes added or modified in this PR. Do NOT audit the rest of the app.
+            Your job: run a COMPLETE END-TO-END verification of every feature that
+            changed in this PR and produce a reviewer-facing report. This is NOT a
+            smoke test — every state listed below must be driven and captured.
 
             Routes changed in this PR (comma-separated): ${CHANGED_ROUTES}
 
-            For EVERY changed route you MUST:
+            ## Per-route test plans
+
+            Each section below is the authoritative list of states you must verify
+            for that route. It comes from the route's co-located TEST.md (or a
+            fallback instruction if the route has no TEST.md).
+
+            ${ROUTE_TEST_SPECS}
+
+            ## How to verify
+
+            For EVERY route listed above:
               1. Navigate to ${BASE_URL}<route>.
-              2. Confirm the page renders without JavaScript errors or obviously broken layout.
-              3. Exercise each primary interactive control (button, form field, modal trigger, etc.) once.
-              4. Capture at least one screenshot of the route in its final state. If the route exposes
-                 distinct UI states (e.g. a modal open vs. closed), capture a screenshot per state.
+              2. Confirm the page renders with no JavaScript errors and no obviously
+                 broken layout. Record console errors and failed network requests.
+              3. For each bullet under that route's "States to verify" (or each
+                 distinct UI state you reach, for routes without a plan):
+                   a. Drive the UI into that state — click, type, submit, or deep-link
+                      via query param — using the selectors the plan mentions when given.
+                   b. Verify the expected observable outcome described in the bullet.
+                   c. Capture a screenshot of the UI in that exact state.
 
-            Keep it short — this is a smoke check, not a full regression suite. Stop as soon as every
-            changed route has been covered.
+            Stay in scope: do not audit routes that are not listed above.
 
-            Report format (this is the PR comment body — follow it strictly):
+            ## Report format (this is the PR comment body — follow it strictly)
 
               ## Summary
-              <one-line overall result>
+              <one line: overall PASS / FAIL and number of routes verified>
 
               ## Per-route results
+
               For EACH route, output a section like:
 
               ### `<route>` — PASS | FAIL
-              - Observation: <one line>
-              - Interactions exercised: <short list>
-              - Console errors: <none | describe>
-              - Screenshots:
+              - **State: <name>** — PASS | FAIL — <one-line observation>
                 ![<route> — <state>](<screenshot_url>)
+              - **State: <name>** — PASS | FAIL — <one-line observation>
+                ![<route> — <state>](<screenshot_url>)
+              - Interactions exercised: <short list of the actions you took>
+              - Console errors: <none | describe>
+              - Network failures: <none | describe>
 
               ## Overall: PASS | FAIL
 
-            Hard requirements for the report:
-              - Every route section MUST embed at least one screenshot using the `![alt](url)`
-                markdown image syntax with the URL produced by the screenshot tool.
-              - If you could not capture a screenshot for a route, mark that route FAIL and explain
-                why in the Observation line.
-              - Do not omit the screenshots section even for passing routes.
+            ## Hard requirements for the report
+
+            - Every state bullet MUST embed one screenshot via `![alt](url)` on an
+              indented line directly beneath that bullet. The URL must be a real URL
+              returned by the screenshot tool — not a placeholder.
+            - If you could not reach a state, mark that state FAIL and explain why
+              in the observation line (e.g. "could not find multi-step-confirm-input").
+            - A route is FAIL if ANY of its state bullets is FAIL.
+            - Overall is FAIL if ANY route is FAIL.
+            - Do NOT omit screenshots for passing states — the reviewer needs visual
+              proof for every claimed PASS.
         env:
           ARGUS_API_KEY: ${{ secrets.ARGUS_API_KEY }}

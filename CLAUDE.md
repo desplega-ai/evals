@@ -153,6 +153,45 @@ This analyzes changed files, creates an authenticated session, navigates to affe
 - Light theme with gray color scheme
 - Path alias: `@/*` maps to `./src/*`
 
+### Adding a new route (PR verification contract)
+
+When you add or meaningfully change a route under `src/app/<route>/`, add or
+update `src/app/<route>/TEST.md` in the same PR. That file is the authoritative
+per-route test plan consumed by `.github/workflows/pr-verify.yml`: its contents
+are injected verbatim into the Argus prompt and become the list of states the
+Argus PR comment must report PASS/FAIL + screenshot for.
+
+Format (see `src/app/pop-ups/TEST.md` for a full example):
+
+```md
+# `/<route>` — verification plan
+
+<1–2 sentence overview of what the page does and any non-obvious selectors>
+
+## States to verify
+
+- **State name** — <how to drive the UI into this state + the observable outcome>.
+- **Another state** — …
+
+## Out of scope
+
+- <things intentionally not covered>
+```
+
+One bullet per distinct UI state. Each bullet becomes one screenshot in the PR
+comment, so keep bullets state-shaped (not action-shaped) — e.g. *"Cookie banner —
+accept"*, not *"click accept"*. Reference `data-testid` / `id` / label selectors
+where helpful so the agent targets the same elements a human reviewer would.
+
+CI tolerates a missing `TEST.md` and falls back to a generic
+exercise-every-control pass, but co-locating the spec is strongly preferred: it
+keeps feature code and verification contract together and makes the Argus report
+a real E2E gate instead of a smoke check.
+
+Change detection in the workflow maps any changed file under `src/app/<route>/**`
+back to its owning route (the nearest ancestor containing `page.tsx`), so
+component-only PRs still trigger verification.
+
 ## Testing Scenarios
 
 The app tests AI agents' abilities to:
