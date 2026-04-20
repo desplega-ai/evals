@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type PopupKind =
   | "cookie"
@@ -24,15 +25,25 @@ const POPUP_LABEL: Record<PopupKind, string> = {
   multiStep: "Multi-step confirmation",
 };
 
+const SLUG_TO_KIND: Record<string, PopupKind> = {
+  cookie: "cookie",
+  newsletter: "newsletter",
+  "exit-intent": "exitIntent",
+  promo: "promo",
+  "multi-step": "multiStep",
+};
+
 const MULTI_STEP_TOTAL = 3;
 const MULTI_STEP_CONFIRM_WORD = "DELETE";
 
-export default function PopupsPage() {
+function PopupsContent() {
   const [open, setOpen] = useState<Set<PopupKind>>(new Set());
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [email, setEmail] = useState("");
   const [multiStepCurrent, setMultiStepCurrent] = useState(1);
   const [confirmText, setConfirmText] = useState("");
+  const searchParams = useSearchParams();
+  const autoOpenedRef = useRef(false);
 
   const addLog = (message: string) => {
     setLogs((prev) => [
@@ -82,6 +93,16 @@ export default function PopupsPage() {
   };
 
   const isOpen = (kind: PopupKind) => open.has(kind);
+
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const slug = searchParams.get("open");
+    if (!slug) return;
+    const kind = SLUG_TO_KIND[slug];
+    if (!kind) return;
+    autoOpenedRef.current = true;
+    showPopup(kind);
+  }, [searchParams]);
 
   return (
     <div className="font-sans min-h-screen p-8">
@@ -500,5 +521,13 @@ export default function PopupsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PopupsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PopupsContent />
+    </Suspense>
   );
 }
